@@ -1,12 +1,12 @@
 #pragma once
 
-#include "irt5920.h"
 #include "irt5501.h"
+#include "irt5920.h"
 #include "tester.h"
 
 class mi {
     static inline QSemaphore semafore;
-    static inline QThread thread;
+    static inline QThread thread[4];
 
     static inline Irt5501* m_irt1 = nullptr;
     static inline Irt5920* m_irt2 = nullptr;

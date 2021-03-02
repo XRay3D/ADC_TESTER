@@ -2,11 +2,14 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QTimer>
+#include <QMessageBox>
 #include <QSound>
+#include <QTimer>
 #include <common_types.h>
 
 class QSound;
+
+class AdcDataModel;
 namespace Ui {
 class MainWindow;
 }
@@ -47,16 +50,18 @@ private:
     void messageR(const QString& text);
     void messageG(const QString& text);
     void messageB(const QString& text);
-
+    void autoRunTest(const Elemer::RawAdcData& rawAdcData);
     //    int status = 0;
     //    int avg = -1;
     //    int stage = 0;
     //    int counter = 0;
-    QTimer timer;
-    void Raw(const Elemer::RawAdcData& data);
+    QTimer getValuesTimer;
+    AdcDataModel* const model;
     TesterTh* tester;
     QSound no;
     QSound yes;
+    bool autoRunTestFl {};
+    QMessageBox msgBox;
 };
 
 #endif // MAINWINDOW_H

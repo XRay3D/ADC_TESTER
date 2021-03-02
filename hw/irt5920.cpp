@@ -35,6 +35,7 @@ void Irt5920::getVal()
             for (int i = 0; i < 5; ++i) {
                 if (i == 4) {
                     emit Val(fromHex<float>(data));
+                    waitAllSemaphore.release();
                 } else {
                     emit write(createParcel(address, 6));
                     if (!wait())
@@ -72,6 +73,7 @@ bool Irt5920::getValB(double& data)
             for (int i = 0; i < 5; ++i) {
                 if (i == 4) {
                     emit Val(data = fromHex<float>(dataArr));
+                    waitAllSemaphore.release();
                 } else {
                     emit write(createParcel(address, 6));
                     if (!wait())

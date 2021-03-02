@@ -51,9 +51,9 @@ typedef struct ADC {
 
 class AdcDataModel : public QAbstractTableModel {
     Q_OBJECT
-    Elemer::RawAdcData m_rawAdcData {};
-    double m_voltage {};
-    double m_current {};
+    Elemer::RawAdcData m_rawAdcData[2] {};
+    double m_current[2] {};
+    double m_voltage[2] {};
 
 public:
     explicit AdcDataModel(QObject* parent = nullptr);
@@ -75,9 +75,13 @@ public:
         RowCount
     };
 
-    void setVoltage(double voltage);
     void setCurrent(double current);
+    void setVoltage(double voltage);
     void setRawAdcData(const Elemer::RawAdcData& rawAdcData);
+
+    double current() const;
+    double voltage() const;
+    Elemer::RawAdcData rawAdcData() const;
 
 signals:
 };

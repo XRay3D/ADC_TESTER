@@ -1,88 +1,94 @@
 #include "testerth.h"
+#include "adcdatamodel.h"
 #include "hw/interface.h"
-TesterTh::TesterTh(QObject* parent)
+
+#include <QDebug>
+#include <QTime>
+
+TesterTh::TesterTh(AdcDataModel* model, QObject* parent)
     : QThread(parent)
+    , model(model)
 {
+    connect(this, &TesterTh::getValues, mi::irtAdc(), &Irt5501::getAdcRawData);
+    connect(this, &TesterTh::getValues, mi::irtI(), &Irt5920::getVal);
+    connect(this, &TesterTh::getValues, mi::irtU(), &Irt5920::getVal);
 }
 
 void TesterTh::run()
 {
-    //    status = data.stat;
-
-    //    QString str = QString::number(status, 2);
-    //    str = QString("00000000").left(8 - str.length()) + str;
-
-    //    ui->leStatus->setText(str);
-    //    ui->dsbxU1->setValue(data.v1);
-    //    ui->dsbxU2->setValue(data.v2);
-    //    ui->dsbxU3->setValue(data.v3);
-
-    //    ui->dsbxU1->setStyleSheet("QDoubleSpinBox{background-color:rgb(255, 128, 128)}");
-
-    //    if (!ui->pbTest->isChecked())
-    //        return;
-    for (int testNum : { 0, 1, 2, 3, 4, 5 }) {
+    for (auto testNum : { Test1, Test2, Test3, Test4, Test5, Test6 }) {
         emit currentTest(testNum);
 
-        for (int i = 0; i < 30; ++i) { // delay 2 sec
+        QTime time;
+        time.start();
+        while (time.elapsed() < (testNum ? 3000 : 6000)) {
             msleep(100);
+            mi::irtAdc()->waitAllReset();
+            emit getValues();
+            qDebug() << "waitAll 1" << mi::irtAdc()->waitAll(3, 1000);
             if (isInterruptionRequested()) {
                 emit currentTest(0);
                 return;
             }
         }
 
-        Elemer::RawAdcData data;
-        double u, i;
-
+        ADC adc {};
         int avg {};
-        for (; avg < 3; ++avg) {
-            mi::irtAdc()->getAdcRawDataB(data);
-            mi::irtI()->getValB(i);
-            mi::irtU()->getValB(u);
+        do {
+            mi::irtAdc()->waitAllReset();
+            emit getValues();
+            qDebug() << "waitAll 2" << mi::irtAdc()->waitAll(3, 1000);
+            msleep(500);
+            //            double u, i;
+            Elemer::RawAdcData data { model->rawAdcData() };
+
+            //            mi::irtAdc()->getAdcRawDataB(data);
+            //            mi::irtI()->getValB(i);
+            //            mi::irtU()->getValB(u);
 
             status = data.stat;
+            if (status == 0xFF) {
+                emit currentTest(0);
+                return;
+            }
 
-            adc += QVector { u, i };
+            adc += std::pair { model->voltage(), model->current() };
+            //            adc += std::pair { u, i };
             adc += data;
 
-            msleep(500);
             if (isInterruptionRequested()) {
                 emit currentTest(0);
                 return;
             }
-        }
+        } while (++avg < 1);
 
         adc /= avg;
 
         switch (testNum) {
         case Test1:
-            test1();
-            break;
+            test1(adc);
+            continue;
         case Test2:
-            test2();
-            break;
+            test2(adc);
+            continue;
         case Test3:
-            test3();
-            break;
+            test3(adc);
+            continue;
         case Test4:
-            test4();
-            break;
+            test4(adc);
+            continue;
         case Test5:
-            test5();
-            break;
+            test5(adc);
+            continue;
         case Test6:
-            test6();
-            break;
+            test6(adc);
+            continue;
         }
-        //        ui->comboBox->setCurrentIndex(stage);
-        //        ui->textEdit->setTextColor(Qt::black);
-        adc.reset();
     }
     emit currentTest(0);
 }
 
-void TesterTh::test1()
+void TesterTh::test1(ADC adc)
 {
     // Ток потребления и напряжение встроенного БП без нагрузки.
     bool fl = true;
@@ -112,7 +118,7 @@ void TesterTh::test1()
     }
 }
 
-void TesterTh::test2()
+void TesterTh::test2(ADC adc)
 {
     bool fl = true;
     emit messageB("Test2");
@@ -120,8 +126,8 @@ void TesterTh::test2()
         emit messageR("status != 71");
         fl = false;
     }
-    if (!qFuzzyCompare(adc.U1, -32768) || !qFuzzyCompare(adc.U2, -32768)) {
-        emit messageR("!qFuzzyCompare(adc.U1, -32768) || !qFuzzyCompare(adc.U2, -32768)");
+    if (!(qFuzzyCompare(adc.U1, -32768.0) && qFuzzyCompare(adc.U2, -32768.0))) {
+        emit messageR("!(qFuzzyCompare(adc.U1, -32768) && qFuzzyCompare(adc.U2, -32768))");
         fl = false;
     }
     if (abs(adc.U3) > 0.0001) {
@@ -141,7 +147,7 @@ void TesterTh::test2()
     }
 }
 
-void TesterTh::test3()
+void TesterTh::test3(ADC adc)
 {
     bool fl = true;
     emit messageB("Test3");
@@ -158,7 +164,7 @@ void TesterTh::test3()
     }
 }
 
-void TesterTh::test4()
+void TesterTh::test4(ADC adc)
 {
     bool fl = true;
     emit messageB("Test4");
@@ -179,7 +185,7 @@ void TesterTh::test4()
     }
 }
 
-void TesterTh::test5()
+void TesterTh::test5(ADC adc)
 {
     bool fl = true;
     emit messageB("Test5");
@@ -221,7 +227,7 @@ void TesterTh::test5()
     }
 }
 
-void TesterTh::test6()
+void TesterTh::test6(ADC adc)
 {
     do {
         emit messageB("Test6");

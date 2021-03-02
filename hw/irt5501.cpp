@@ -27,6 +27,7 @@ bool Irt5501::getAdcRawDataB(RawAdcData& data)
         emit write(createParcel(address, 2, 255));
         if (wait()) {
             emit Raw(data = fromHex<std::pair<RawAdcData, RawAdcData>>(1).first);
+            waitAllSemaphore.release();
             return true;
         }
     }
@@ -48,7 +49,9 @@ void Irt5501::getAdcRawData()
 #endif
     if (m_connected) {
         emit write(createParcel(address, 2, 255));
-        if (wait())
+        if (wait()) {
             emit Raw(fromHex<std::pair<RawAdcData, RawAdcData>>(1).first);
+            waitAllSemaphore.release();
+        }
     }
 }

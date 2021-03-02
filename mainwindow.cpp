@@ -6,83 +6,84 @@
 #include <QMessageBox>
 #include <QSerialPortInfo>
 #include <QSettings>
+#include <algorithm>
+#include <ranges>
 
 #include <hw/interface.h>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , tester(new TesterTh)
+    , model(new AdcDataModel(this))
+    , tester(new TesterTh(model))
     , no(QStringLiteral("C:/Windows/Media/Windows Critical Stop.wav"))
     , yes(QStringLiteral("C:/Windows/Media/Windows Notify.wav"))
+    , msgBox("", "Тест завершён", QMessageBox::Information, QMessageBox::Ok, {}, {}, this)
 {
     ui->setupUi(this);
-    for (const QSerialPortInfo& info : QSerialPortInfo::availablePorts()) {
-        if (info.manufacturer().contains("FTDI"))
-            ui->cbxPortRelay->addItem(info.portName());
-        ui->cbxPortAdc->addItem(info.portName());
-        ui->cbxPortI->addItem(info.portName());
-        ui->cbxPortU->addItem(info.portName());
+    auto availablePorts { QSerialPortInfo::availablePorts().toVector() };
+    std::ranges::sort(availablePorts, {}, [](const QSerialPortInfo& info) { return info.portName().midRef(3).toInt(); });
+
+    for (auto& portInfo : availablePorts) {
+        if (portInfo.manufacturer().contains("FTDI"))
+            ui->cbxPortRelay->addItem(portInfo.portName());
+        ui->cbxPortAdc->addItem(portInfo.portName());
+        ui->cbxPortI->addItem(portInfo.portName());
+        ui->cbxPortU->addItem(portInfo.portName());
     }
-    auto model = new AdcDataModel(ui->tvRawAdcData);
     ui->tvRawAdcData->setModel(model);
     ui->tvRawAdcData->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->tvRawAdcData->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ui->tvRawAdcData->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
     readSettings();
 
-    connect(mi::irtAdc(), &Irt5501::Raw, this, &MainWindow::Raw);
-    connect(mi::irtI(), &Irt5920::Val, ui->dsbxI, &QDoubleSpinBox::setValue);
-    connect(mi::irtU(), &Irt5920::Val, ui->dsbxU, &QDoubleSpinBox::setValue);
-
     connect(mi::irtAdc(), &Irt5501::Raw, model, &AdcDataModel::setRawAdcData);
+    connect(mi::irtAdc(), &Irt5501::Raw, this, &MainWindow::autoRunTest);
     connect(mi::irtI(), &Irt5920::Val, model, &AdcDataModel::setCurrent);
     connect(mi::irtU(), &Irt5920::Val, model, &AdcDataModel::setVoltage);
 
-    connect(&timer, &QTimer::timeout, mi::irtAdc(), &Irt5501::getAdcRawData);
-    connect(&timer, &QTimer::timeout, mi::irtI(), &Irt5920::getVal);
-    connect(&timer, &QTimer::timeout, mi::irtU(), &Irt5920::getVal);
+    connect(&getValuesTimer, &QTimer::timeout, mi::irtAdc(), &Irt5501::getAdcRawData);
+    connect(&getValuesTimer, &QTimer::timeout, mi::irtI(), &Irt5920::getVal);
+    connect(&getValuesTimer, &QTimer::timeout, mi::irtU(), &Irt5920::getVal);
 
     connect(tester, &TesterTh::messageR, this, &MainWindow::messageR);
     connect(tester, &TesterTh::messageG, this, &MainWindow::messageG);
     connect(tester, &TesterTh::messageB, this, &MainWindow::messageB);
 
-    connect(tester, &TesterTh::currentTest, ui->comboBox, qOverload<int>(&QComboBox::setCurrentIndex));
+    connect(tester, &TesterTh::currentTest, this, &MainWindow::on_comboBox_currentIndexChanged);
 
     on_pbPing_clicked();
 }
 
 MainWindow::~MainWindow()
 {
-    timer.stop();
+    on_comboBox_currentIndexChanged(0);
+
+    getValuesTimer.stop();
 
     writeSettings();
-
-    //    emit mi::irt1()->close();
-    //    emit mi::irt2()->close();
-    //    emit mi::irt3()->close();
 
     delete ui;
 }
 
 void MainWindow::on_pbPing_clicked()
 {
-    timer.stop();
+    getValuesTimer.stop();
     QString str;
     if (!mi::tester()->ping(ui->cbxPortRelay->currentText(), 57600))
-        str.append("cbxPortRelay!\n");
+        str.append("PortRelay!\n");
     if (!mi::irtAdc()->ping(ui->cbxPortAdc->currentText(), 9600, 1))
-        str.append("cbxPortAdc!\n");
+        str.append("PortAdc!\n");
     if (!mi::irtI()->ping(ui->cbxPortI->currentText(), 9600, 2))
-        str.append("cbxPortI!\n");
+        str.append("PortI!\n");
     if (!mi::irtU()->ping(ui->cbxPortU->currentText(), 9600, 3))
-        str.append("cbxPortU!\n");
+        str.append("PortU!\n");
     if (str.isEmpty()) {
         //        QMessageBox::information(this, "", "Ok");
-        timer.start(1000);
+        getValuesTimer.start(1000);
     } else {
         QMessageBox::warning(this, "", str);
-        timer.stop();
+        getValuesTimer.stop();
     }
     ui->groupBox_3->setEnabled(str.isEmpty());
 }
@@ -93,10 +94,10 @@ void MainWindow::writeSettings()
     settings.beginGroup("MainWindow");
     settings.setValue("Geometry", saveGeometry());
     settings.setValue("State", saveState());
-    settings.setValue("cbxPort1", ui->cbxPortRelay->currentText());
-    settings.setValue("cbxPort2", ui->cbxPortAdc->currentText());
-    settings.setValue("cbxPort3", ui->cbxPortI->currentText());
-    settings.setValue("cbxPort4", ui->cbxPortU->currentText());
+    settings.setValue("PortR", ui->cbxPortRelay->currentText());
+    settings.setValue("PortA", ui->cbxPortAdc->currentText());
+    settings.setValue("PortI", ui->cbxPortI->currentText());
+    settings.setValue("PortU", ui->cbxPortU->currentText());
     settings.endGroup();
 }
 
@@ -106,10 +107,10 @@ void MainWindow::readSettings()
     settings.beginGroup("MainWindow");
     restoreGeometry(settings.value("Geometry").toByteArray());
     restoreState(settings.value("State").toByteArray());
-    ui->cbxPortRelay->setCurrentText(settings.value("cbxPort1").toString());
-    ui->cbxPortAdc->setCurrentText(settings.value("cbxPort2").toString());
-    ui->cbxPortI->setCurrentText(settings.value("cbxPort3").toString());
-    ui->cbxPortU->setCurrentText(settings.value("cbxPort4").toString());
+    ui->cbxPortRelay->setCurrentText(settings.value("PortR").toString());
+    ui->cbxPortAdc->setCurrentText(settings.value("PortA").toString());
+    ui->cbxPortI->setCurrentText(settings.value("PortI").toString());
+    ui->cbxPortU->setCurrentText(settings.value("PortU").toString());
     settings.endGroup();
 }
 
@@ -117,8 +118,10 @@ void MainWindow::finished()
 {
     ui->pbTest->setChecked(false);
     ui->comboBox->setCurrentIndex(0);
-    timer.start();
+    getValuesTimer.start();
     yes.play();
+    disconnect(tester, &QThread::finished, this, &MainWindow::finished);
+    msgBox.exec();
     //    QMessageBox::information(this, "", "Тесты закончились");
 }
 
@@ -140,17 +143,16 @@ void MainWindow::messageB(const QString& text)
     ui->textEdit->append(text);
 }
 
-void MainWindow::Raw(const Elemer::RawAdcData& data)
+void MainWindow::autoRunTest(const Elemer::RawAdcData& rawAdcData)
 {
-    auto status = data.stat;
-
-    QString str = QString::number(status, 2);
-    str = QString("00000000").left(8 - str.length()) + str;
-
-    ui->leStatus->setText(str);
-    ui->dsbxU1->setValue(data.v1);
-    ui->dsbxU2->setValue(data.v2);
-    ui->dsbxU3->setValue(data.v3);
+    if (tester->isRunning())
+        return;
+    if (rawAdcData.stat == 64 && !autoRunTestFl) {
+        on_pbTest_clicked(true);
+        autoRunTestFl = true;
+    } else if (rawAdcData.stat == 0xFF && autoRunTestFl) {
+        autoRunTestFl = false;
+    }
 }
 
 void MainWindow::on_pbTest_clicked(bool checked)
@@ -165,23 +167,26 @@ void MainWindow::on_pbTest_clicked(bool checked)
 
         ui->textEdit->clear();
 
-        timer.stop();
-
+        getValuesTimer.stop();
         connect(tester, &QThread::finished, this, &MainWindow::finished);
 
         tester->start();
+        msgBox.accept();
     } else {
         disconnect(tester, &QThread::finished, this, &MainWindow::finished);
         if (tester->isRunning()) {
             tester->requestInterruption();
             tester->wait();
+            msgBox.accept();
         }
-        timer.start();
+        getValuesTimer.start();
     }
+    ui->pbTest->setChecked(checked);
 }
 
 void MainWindow::on_comboBox_currentIndexChanged(int index)
 {
+    ui->comboBox->setCurrentIndex(index);
     qDebug() << "comboBox" << index;
     mi::tester()->setStage(index);
 }

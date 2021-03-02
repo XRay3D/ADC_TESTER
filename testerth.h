@@ -4,10 +4,11 @@
 #include <ascii_device.h>
 #include <qglobal.h>
 
+class AdcDataModel;
 class TesterTh : public QThread {
     Q_OBJECT
 public:
-    explicit TesterTh(QObject* parent = nullptr);
+    explicit TesterTh(AdcDataModel* model, QObject* parent = nullptr);
 
 signals:
     void currentTest(int);
@@ -15,6 +16,8 @@ signals:
     void messageR(const QString&);
     void messageG(const QString&);
     void messageB(const QString&);
+
+    void getValues();
 
 private:
     enum {
@@ -26,39 +29,30 @@ private:
         Test6
     };
 
-    void test1();
-    void test2();
-    void test3();
-    void test4();
-    void test5();
-    void test6();
+    struct ADC {
+        double U1 {};
+        double U2 {};
+        double U3 {};
+        double U {};
+        double I {};
 
-    void reset();
-    typedef struct ADC {
-        ADC() { }
-
-        //int status = 0;
-        double U1 = 0.0;
-        double U2 = 0.0;
-        double U3 = 0.0;
-        double U = 0.0;
-        double I = 0.0;
-
-        void reset()
+        ADC operator=(const std::pair<double, double>& v)
         {
-            //status = 0;
-            U1 = 0.0;
-            U2 = 0.0;
-            U3 = 0.0;
-            U = 0.0;
-            I = 0.0;
+            U = v.first;
+            I = v.second;
+            return *this;
         }
-
-        ADC operator+=(const QVector<double>& v)
+        ADC operator=(const Elemer::RawAdcData& data)
         {
-            const double* p = v.data();
-            U += *p++;
-            I += *p++;
+            U1 = data.v1;
+            U2 = data.v2;
+            U3 = data.v3;
+            return *this;
+        }
+        ADC operator+=(const std::pair<double, double>& v)
+        {
+            U += v.first;
+            I += v.second;
             return *this;
         }
         ADC operator+=(const Elemer::RawAdcData& data)
@@ -77,9 +71,17 @@ private:
             I /= v;
             return *this;
         }
-    } ADC;
+    };
 
-    ADC adc;
+    void test1(ADC adc);
+    void test2(ADC adc);
+    void test3(ADC adc);
+    void test4(ADC adc);
+    void test5(ADC adc);
+    void test6(ADC adc);
+
+    void reset();
+
     //template<typename T>
     inline bool rangeTest(double min, double max, double val, bool eq = false)
     {
@@ -88,6 +90,8 @@ private:
         return min < val || val < max;
     }
     int status {};
+
+    AdcDataModel* const model;
 
 protected:
     // QThread interface
