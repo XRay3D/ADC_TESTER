@@ -21,6 +21,15 @@ MainWindow::MainWindow(QWidget* parent)
     , msgBox("", "Тест завершён", QMessageBox::Information, QMessageBox::Ok, {}, {}, this)
 {
     ui->setupUi(this);
+
+    leds = {
+        ui->widget_1,
+        ui->widget_2,
+        ui->widget_3,
+        ui->widget_4,
+        ui->widget_5,
+        ui->widget_6,
+    };
     auto availablePorts { QSerialPortInfo::availablePorts().toVector() };
     std::ranges::sort(availablePorts, {}, [](const QSerialPortInfo& info) { return info.portName().midRef(3).toInt(); });
 
@@ -50,14 +59,16 @@ MainWindow::MainWindow(QWidget* parent)
     connect(tester, &TesterTh::messageG, this, &MainWindow::messageG);
     connect(tester, &TesterTh::messageB, this, &MainWindow::messageB);
 
-    connect(tester, &TesterTh::currentTest, this, &MainWindow::on_comboBox_currentIndexChanged);
+    connect(tester, &TesterTh::currentTest, mi::tester(), &Tester::setStage);
+    connect(tester, &TesterTh::currentTest, ui->comboBox, &QComboBox::setCurrentIndex);
+    connect(ui->comboBox, qOverload<int>(&QComboBox::currentIndexChanged), mi::tester(), &Tester::setStage);
 
     on_pbPing_clicked();
 }
 
 MainWindow::~MainWindow()
 {
-    on_comboBox_currentIndexChanged(0);
+    mi::tester()->setStage(0);
 
     getValuesTimer.stop();
 
@@ -117,9 +128,15 @@ void MainWindow::readSettings()
 void MainWindow::finished()
 {
     ui->pbTest->setChecked(false);
+    mi::tester()->setStage(0);
     ui->comboBox->setCurrentIndex(0);
     getValuesTimer.start();
-    yes.play();
+    tester->results() ? yes.play()
+                      : no.play();
+
+    for (int i = 0; i < 6; ++i)
+        leds[i]->setLedColor(tester->getResults()[i] ? Qt::green : Qt::red);
+
     disconnect(tester, &QThread::finished, this, &MainWindow::finished);
     msgBox.exec();
     //    QMessageBox::information(this, "", "Тесты закончились");
@@ -182,11 +199,4 @@ void MainWindow::on_pbTest_clicked(bool checked)
         getValuesTimer.start();
     }
     ui->pbTest->setChecked(checked);
-}
-
-void MainWindow::on_comboBox_currentIndexChanged(int index)
-{
-    ui->comboBox->setCurrentIndex(index);
-    qDebug() << "comboBox" << index;
-    mi::tester()->setStage(index);
 }

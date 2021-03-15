@@ -31,26 +31,21 @@ DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs depr
 SOURCES += \
     adcdatamodel.cpp \
     hw/interface.cpp \
-    hw/irt.cpp \
     hw/irt5501.cpp \
     hw/irt5920.cpp \
     hw/tester.cpp \
     main.cpp \
     mainwindow.cpp \
-    hw/common_interfaces.cpp \
     myled.cpp \
     testerth.cpp
 
 HEADERS += \
     adcdatamodel.h \
-    hw/common_interfaces.h \
     hw/interface.h \
-    hw/irt.h \
     hw/irt5501.h \
     hw/irt5920.h \
     hw/tester.h \
     mainwindow.h \
-    hw/common_interfaces.h \
     myled.h \
     testerth.h
 
@@ -59,4 +54,5 @@ include(../MyProtokol/myprotokol.pri)
 FORMS += \
     mainwindow.ui
 
-DISTFILES += \
+DEFINES += \
+    EL_ALWAYS_OPEN

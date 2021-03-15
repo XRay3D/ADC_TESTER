@@ -20,8 +20,8 @@ bool Irt5501::getAdcRawDataB(RawAdcData& data)
     emit measuredValue(val);
     return /*true*/;
 #endif
-#ifndef ALWAYS_OPEN
-    Elemer::PortOpener po(this);
+#ifndef EL_ALWAYS_OPEN
+    PortOpener po(this);
 #endif
     if (m_connected) {
         emit write(createParcel(address, 2, 255));
@@ -44,8 +44,8 @@ void Irt5501::getAdcRawData()
     emit measuredValue(val);
     return /*true*/;
 #endif
-#ifndef ALWAYS_OPEN
-    Elemer::PortOpener po(this);
+#ifndef EL_ALWAYS_OPEN
+    PortOpener po(this);
 #endif
     if (m_connected) {
         emit write(createParcel(address, 2, 255));

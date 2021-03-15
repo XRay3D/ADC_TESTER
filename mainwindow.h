@@ -10,6 +10,8 @@
 class QSound;
 
 class AdcDataModel;
+
+class MyLed;
 namespace Ui {
 class MainWindow;
 }
@@ -34,7 +36,6 @@ public:
 private slots:
     void on_pbPing_clicked();
     void on_pbTest_clicked(bool checked);
-    void on_comboBox_currentIndexChanged(int index);
 
 signals:
     void Start();
@@ -62,6 +63,8 @@ private:
     QSound yes;
     bool autoRunTestFl {};
     QMessageBox msgBox;
+
+    QVector<MyLed*> leds;
 };
 
 #endif // MAINWINDOW_H

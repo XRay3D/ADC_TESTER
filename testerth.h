@@ -7,8 +7,23 @@
 class AdcDataModel;
 class TesterTh : public QThread {
     Q_OBJECT
+
+    enum {
+        Test1,
+        Test2,
+        Test3,
+        Test4,
+        Test5,
+        Test6,
+        TestCount
+    };
+
 public:
     explicit TesterTh(AdcDataModel* model, QObject* parent = nullptr);
+
+    bool results() const;
+
+    bool* getResults() const;
 
 signals:
     void currentTest(int);
@@ -19,50 +34,53 @@ signals:
 
     void getValues();
 
-private:
-    enum {
-        Test1,
-        Test2,
-        Test3,
-        Test4,
-        Test5,
-        Test6
-    };
+    //    void testResults(int, bool);
 
-    struct ADC {
+private:
+    bool m_results[TestCount] {};
+    bool m_resultsAll {};
+
+    struct AdcMath {
         double U1 {};
         double U2 {};
         double U3 {};
         double U {};
         double I {};
-
-        ADC operator=(const std::pair<double, double>& v)
+        void reset()
+        {
+            U1 = {};
+            U2 = {};
+            U3 = {};
+            U = {};
+            I = {};
+        }
+        AdcMath operator=(const std::pair<double, double>& v)
         {
             U = v.first;
             I = v.second;
             return *this;
         }
-        ADC operator=(const Elemer::RawAdcData& data)
+        AdcMath operator=(const Elemer::RawAdcData& data)
         {
             U1 = data.v1;
             U2 = data.v2;
             U3 = data.v3;
             return *this;
         }
-        ADC operator+=(const std::pair<double, double>& v)
+        AdcMath operator+=(const std::pair<double, double>& v)
         {
             U += v.first;
             I += v.second;
             return *this;
         }
-        ADC operator+=(const Elemer::RawAdcData& data)
+        AdcMath operator+=(const Elemer::RawAdcData& data)
         {
             U1 += data.v1;
             U2 += data.v2;
             U3 += data.v3;
             return *this;
         }
-        ADC operator/=(double v)
+        AdcMath operator/=(double v)
         {
             U1 /= v;
             U2 /= v;
@@ -71,16 +89,14 @@ private:
             I /= v;
             return *this;
         }
-    };
+    } adc;
 
-    void test1(ADC adc);
-    void test2(ADC adc);
-    void test3(ADC adc);
-    void test4(ADC adc);
-    void test5(ADC adc);
-    void test6(ADC adc);
-
-    void reset();
+    void test1();
+    void test2();
+    void test3();
+    void test4();
+    void test5();
+    void test6();
 
     //template<typename T>
     inline bool rangeTest(double min, double max, double val, bool eq = false)

@@ -143,6 +143,12 @@
        </item>
        <item row="0" column="1">
         <widget class="MyLed" name="widget_1" native="true">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>18</height>
+          </size>
+         </property>
          <property name="styleSheet">
           <string notr="true"/>
          </property>
@@ -157,6 +163,12 @@
        </item>
        <item row="1" column="1">
         <widget class="MyLed" name="widget_2" native="true">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>18</height>
+          </size>
+         </property>
          <property name="styleSheet">
           <string notr="true"/>
          </property>
@@ -171,6 +183,12 @@
        </item>
        <item row="2" column="1">
         <widget class="MyLed" name="widget_3" native="true">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>18</height>
+          </size>
+         </property>
          <property name="styleSheet">
           <string notr="true"/>
          </property>
@@ -185,6 +203,12 @@
        </item>
        <item row="3" column="1">
         <widget class="MyLed" name="widget_4" native="true">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>18</height>
+          </size>
+         </property>
          <property name="styleSheet">
           <string notr="true"/>
          </property>
@@ -199,6 +223,12 @@
        </item>
        <item row="4" column="1">
         <widget class="MyLed" name="widget_5" native="true">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>18</height>
+          </size>
+         </property>
          <property name="styleSheet">
           <string notr="true"/>
          </property>
@@ -213,6 +243,12 @@
        </item>
        <item row="5" column="1">
         <widget class="MyLed" name="widget_6" native="true">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>18</height>
+          </size>
+         </property>
          <property name="styleSheet">
           <string notr="true"/>
          </property>

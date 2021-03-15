@@ -6,7 +6,7 @@
 using namespace Elemer;
 
 Irt5920::Irt5920(QObject* parent)
-    : Elemer::AsciiDevice(parent)
+    : Elemer::AsciiDevice(parent, {}, DTS::On)
 {
 }
 
@@ -20,8 +20,8 @@ void Irt5920::getVal()
     emit measuredValue(val);
     return /*true*/;
 #endif
-#ifndef ALWAYS_OPEN
-    Elemer::PortOpener po(this);
+#ifndef EL_ALWAYS_OPEN
+    PortOpener po(this);
 #endif
     if (m_connected) {
         do {
@@ -58,8 +58,8 @@ bool Irt5920::getValB(double& data)
     emit measuredValue(val);
     return /*true*/;
 #endif
-#ifndef ALWAYS_OPEN
-    Elemer::PortOpener po(this);
+#ifndef EL_ALWAYS_OPEN
+    PortOpener po(this);
 #endif
     if (m_connected) {
         do {
