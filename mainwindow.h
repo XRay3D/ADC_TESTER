@@ -5,7 +5,7 @@
 #include <QMessageBox>
 #include <QSound>
 #include <QTimer>
-#include <common_types.h>
+#include <hw/irt5501.h>
 
 class QSound;
 
@@ -51,7 +51,7 @@ private:
     void messageR(const QString& text);
     void messageG(const QString& text);
     void messageB(const QString& text);
-    void autoRunTest(const Elemer::RawAdcData& rawAdcData);
+    void autoRunTest(const RawAdcData& rawAdcData);
     //    int status = 0;
     //    int avg = -1;
     //    int stage = 0;

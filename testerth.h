@@ -1,8 +1,9 @@
 #pragma once
 
 #include <QThread>
-#include <ascii_device.h>
+#include <device.h>
 #include <qglobal.h>
+#include <hw/irt5501.h>
 
 class AdcDataModel;
 class TesterTh : public QThread {
@@ -60,7 +61,7 @@ private:
             I = v.second;
             return *this;
         }
-        AdcMath operator=(const Elemer::RawAdcData& data)
+        AdcMath operator=(const RawAdcData& data)
         {
             U1 = data.v1;
             U2 = data.v2;
@@ -73,7 +74,7 @@ private:
             I += v.second;
             return *this;
         }
-        AdcMath operator+=(const Elemer::RawAdcData& data)
+        AdcMath operator+=(const RawAdcData& data)
         {
             U1 += data.v1;
             U2 += data.v2;

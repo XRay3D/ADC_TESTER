@@ -5,6 +5,11 @@
 
 using namespace Elemer;
 
+enum {
+    Cmd2 = 2,
+    Cmd255 = 255
+};
+
 Irt5501::Irt5501(QObject* parent)
     : Elemer::AsciiDevice(parent)
 {
@@ -13,45 +18,21 @@ Irt5501::Irt5501(QObject* parent)
 bool Irt5501::getAdcRawDataB(RawAdcData& data)
 {
     QMutexLocker locker(&m_mutex);
-#ifdef EMU
-    QRandomGenerator generator(QTime::currentTime().msecsSinceStartOfDay());
-    constexpr double k = 0.01;
-    val = val * k + generator.bounded(static_cast<int>((set - 0.5) * 100), static_cast<int>((set + 0.5) * 100)) * 0.01 * (1.0 - k);
-    emit measuredValue(val);
-    return /*true*/;
-#endif
-#ifndef EL_ALWAYS_OPEN
-    PortOpener po(this);
-#endif
-    if (m_connected) {
-        emit write(createParcel(address, 2, 255));
-        if (wait()) {
-            emit Raw(data = fromHex<std::pair<RawAdcData, RawAdcData>>(1).first);
-            waitAllSemaphore.release();
-            return true;
-        }
+    RawAdcData adcData2;
+    bool success = isConnected() && readHex<Cmd2, Cmd255>(data, adcData2);
+    if (success) {
+        emit Raw(data);
+        waitAllSemaphore.release();
     }
-    return {};
+    return success;
 }
 
-void Irt5501::getAdcRawData()
+bool Irt5501::getAdcRawData()
 {
     QMutexLocker locker(&m_mutex);
-#ifdef EMU
-    QRandomGenerator generator(QTime::currentTime().msecsSinceStartOfDay());
-    constexpr double k = 0.01;
-    val = val * k + generator.bounded(static_cast<int>((set - 0.5) * 100), static_cast<int>((set + 0.5) * 100)) * 0.01 * (1.0 - k);
-    emit measuredValue(val);
-    return /*true*/;
-#endif
-#ifndef EL_ALWAYS_OPEN
-    PortOpener po(this);
-#endif
-    if (m_connected) {
-        emit write(createParcel(address, 2, 255));
-        if (wait()) {
-            emit Raw(fromHex<std::pair<RawAdcData, RawAdcData>>(1).first);
-            waitAllSemaphore.release();
-        }
-    }
+    RawAdcData adcData1[2];
+    bool success = isConnected() && readHex<Cmd2, Cmd255>(adcData1);
+    if (success)
+        emit Raw(adcData1[0]);
+    return success;
 }

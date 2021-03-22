@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QAbstractTableModel>
-#include <common_types.h>
+#include <hw/irt5501.h>
 #include <qglobal.h>
 
 typedef struct ADC {
@@ -31,7 +31,7 @@ typedef struct ADC {
         I += *p++;
         return *this;
     }
-    ADC operator+=(const Elemer::RawAdcData& data)
+    ADC operator+=(const RawAdcData& data)
     {
         U1 += data.v1;
         U2 += data.v2;
@@ -51,7 +51,7 @@ typedef struct ADC {
 
 class AdcDataModel : public QAbstractTableModel {
     Q_OBJECT
-    Elemer::RawAdcData m_rawAdcData[2] {};
+    RawAdcData m_rawAdcData[2] {};
     double m_current[2] {};
     double m_voltage[2] {};
 
@@ -62,10 +62,12 @@ public:
     int rowCount(const QModelIndex& = {}) const override;
     int columnCount(const QModelIndex& = {}) const override;
     QVariant data(const QModelIndex& index, int role) const override;
-    void Raw(const Elemer::RawAdcData& raw);
+    void Raw(const RawAdcData& raw);
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
     Qt::ItemFlags flags(const QModelIndex& index) const override;
     enum {
+        Ready,
+        ControlSum,
         AdcStatus,
         AdcVoltage1,
         AdcVoltage2,
@@ -77,11 +79,11 @@ public:
 
     void setCurrent(double current);
     void setVoltage(double voltage);
-    void setRawAdcData(const Elemer::RawAdcData& rawAdcData);
+    void setRawAdcData(const RawAdcData& rawAdcData);
 
     double current() const;
     double voltage() const;
-    Elemer::RawAdcData rawAdcData() const;
+    RawAdcData rawAdcData() const;
 
 signals:
 };

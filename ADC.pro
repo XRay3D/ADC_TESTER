@@ -6,7 +6,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 DESTDIR = $$_PRO_FILE_PWD_/bin
 
 include(../CommonInterfaces/CommonInterfaces.pri)
-include(../ElemerAscii/ElemerAscii.pri)
+include(../ElemerDevice/ElemerDevice.pri)
+include(../MyProtokol/myprotokol.pri)
 
 #CONFIG += c++17
 QMAKE_CXXFLAGS += /std:c++latest
@@ -26,7 +27,6 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
-
 
 SOURCES += \
     adcdatamodel.cpp \
@@ -49,10 +49,10 @@ HEADERS += \
     myled.h \
     testerth.h
 
-include(../MyProtokol/myprotokol.pri)
 
 FORMS += \
     mainwindow.ui
 
 DEFINES += \
-    EL_ALWAYS_OPEN
+#    EL_ALWAYS_OPEN \
+    EL_LOG

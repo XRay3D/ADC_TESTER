@@ -160,7 +160,7 @@ void MainWindow::messageB(const QString& text)
     ui->textEdit->append(text);
 }
 
-void MainWindow::autoRunTest(const Elemer::RawAdcData& rawAdcData)
+void MainWindow::autoRunTest(const RawAdcData& rawAdcData)
 {
     if (tester->isRunning())
         return;

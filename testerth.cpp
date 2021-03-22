@@ -51,7 +51,10 @@ void TesterTh::run()
             qDebug() << "waitAll 2" << mi::irtAdc()->waitAll(3, 1000);
             msleep(500);
 
-            Elemer::RawAdcData data { model->rawAdcData() };
+            RawAdcData data { model->rawAdcData() };
+
+            if (!data.csOk() || !data.getReady())
+                return;
 
             status = data.stat;
             if (status == 0xFF)
@@ -64,7 +67,7 @@ void TesterTh::run()
                 emit currentTest(0);
                 return;
             }
-        } while (++avg < 1);
+        } while (++avg < 3);
 
         adc /= avg;
         tests[testNum](*this);
@@ -76,17 +79,17 @@ void TesterTh::test1()
     qDebug(__FUNCTION__);
     // Ток потребления и напряжение встроенного БП без нагрузки.
     m_results[Test1] = true;
-    emit messageB("Test1");
-    if (abs(adc.U1) > 0.0001) {
-        emit messageR("ADC_U1 " + QString::number(abs(adc.U1) - 0.0001, 'f', 6));
+    emit messageB("Тест №1");
+    if (abs(adc.U1) > threshold) {
+        emit messageR("ADC_U1 " + QString::number(abs(adc.U1) - threshold, 'f', 6));
         m_results[Test1] = false;
     }
-    if (abs(adc.U2) > 0.0005) {
-        emit messageR("ADC_U2 " + QString::number(abs(adc.U2) - 0.0005, 'f', 6));
+    if (abs(adc.U2) > threshold) {
+        emit messageR("ADC_U2 " + QString::number(abs(adc.U2) - threshold, 'f', 6));
         m_results[Test1] = false;
     }
-    if (abs(adc.U3) > 0.0001) {
-        emit messageR("ADC_U3 " + QString::number(abs(adc.U3) - 0.0001, 'f', 6));
+    if (abs(adc.U3) > threshold) {
+        emit messageR("ADC_U3 " + QString::number(abs(adc.U3) - threshold, 'f', 6));
         m_results[Test1] = false;
     }
     if (!rangeTest(23.55, 24.45, adc.U)) {
@@ -107,7 +110,7 @@ void TesterTh::test2()
 {
     qDebug(__FUNCTION__);
     m_results[Test2] = true;
-    emit messageB("Test2");
+    emit messageB("Тест №2");
     if (status != 71) {
         emit messageR("status != 71");
         m_results[Test2] = false;
@@ -116,8 +119,8 @@ void TesterTh::test2()
         emit messageR("!(qFuzzyCompare(adc.U1, -32768) && qFuzzyCompare(adc.U2, -32768))");
         m_results[Test2] = false;
     }
-    if (abs(adc.U3) > 0.0001) {
-        emit messageR("adc.U3 > 0.0001 " + QString::number(adc.U3));
+    if (abs(adc.U3) > threshold) {
+        emit messageR("adc.U3 > dk " + QString::number(adc.U3));
         m_results[Test2] = false;
     }
     if (!rangeTest(23.55, 24.45, adc.U)) {
@@ -138,7 +141,7 @@ void TesterTh::test3()
 {
     qDebug(__FUNCTION__);
     m_results[Test3] = true;
-    emit messageB("Test3");
+    emit messageB("Тест №3");
     if (abs(adc.U2 - adc.U3) > 0.005) {
         emit messageR("abs(adc.U2 - adc.U3) > 0.005");
         m_results[Test3] = false;
@@ -157,7 +160,7 @@ void TesterTh::test4()
 {
     qDebug(__FUNCTION__);
     m_results[Test4] = true;
-    emit messageB("Test4");
+    emit messageB("Тест №4");
     if (abs(adc.U1 - adc.U2) > 0.005) {
         emit messageR("abs(adc.U1 - adc.U2) > 0.005");
         m_results[Test4] = false;
@@ -180,7 +183,7 @@ void TesterTh::test5()
 {
     qDebug(__FUNCTION__);
     m_results[Test5] = true;
-    emit messageB("Test5");
+    emit messageB("Тест №5");
     const double k = 0.01;
     if (abs(adc.U1 - adc.U2) > k) {
         emit messageR(QString("abs(U1 - U2) -> %1 > %2").arg(abs(adc.U1 - adc.U2)).arg(k));
@@ -224,7 +227,7 @@ void TesterTh::test6()
 {
     qDebug(__FUNCTION__);
     m_results[Test6] = true;
-    emit messageB("Test6");
+    emit messageB("Тест №6");
     if (26.0 > adc.I || adc.I > 50.0) {
         emit messageR("adc.I > 50.0");
         m_results[Test6] = false;

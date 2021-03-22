@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ascii_device.h>
+#include <device.h>
 
 class Irt5920 final : public Elemer::AsciiDevice {
     Q_OBJECT
@@ -10,7 +10,7 @@ public:
 
     Elemer::DeviceType type() const override { return Elemer::IRT5920; }
 
-    void getVal();
+    bool getVal();
     bool getValB(double& data);
 
 signals:
