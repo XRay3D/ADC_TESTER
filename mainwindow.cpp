@@ -46,10 +46,10 @@ MainWindow::MainWindow(QWidget* parent)
 
     readSettings();
 
-    connect(mi::irtAdc(), &Irt5501::Raw, model, &AdcDataModel::setRawAdcData);
-    connect(mi::irtAdc(), &Irt5501::Raw, this, &MainWindow::autoRunTest);
-    connect(mi::irtI(), &Irt5920::Val, model, &AdcDataModel::setCurrent);
-    connect(mi::irtU(), &Irt5920::Val, model, &AdcDataModel::setVoltage);
+    connect(mi::irtAdc(), &Irt5501::RawAdcData, model, &AdcDataModel::setRawAdcData);
+    connect(mi::irtAdc(), &Irt5501::RawAdcData, this, &MainWindow::autoRunTest);
+    connect(mi::irtI(), &Irt5920::Value, model, &AdcDataModel::setCurrent);
+    connect(mi::irtU(), &Irt5920::Value, model, &AdcDataModel::setVoltage);
 
     connect(&getValuesTimer, &QTimer::timeout, mi::irtAdc(), &Irt5501::getAdcRawData);
     connect(&getValuesTimer, &QTimer::timeout, mi::irtI(), &Irt5920::getVal);

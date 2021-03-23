@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QThread>
-#include <device.h>
+#include <ed_device.h>
 #include <qglobal.h>
 #include <hw/irt5501.h>
 

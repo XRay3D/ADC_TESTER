@@ -1,8 +1,8 @@
 #pragma once
 
-#include <device.h>
+#include <ed_device.h>
 
-class Irt5920 final : public Elemer::AsciiDevice {
+class Irt5920 final : public Elemer::Device {
     Q_OBJECT
 
 public:
@@ -11,8 +11,7 @@ public:
     Elemer::DeviceType type() const override { return Elemer::IRT5920; }
 
     bool getVal();
-    bool getValB(double& data);
 
 signals:
-    void Val(double data);
+    void Value(double data);
 };

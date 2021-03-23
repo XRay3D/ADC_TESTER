@@ -1,6 +1,6 @@
 #pragma once
 
-#include <device.h>
+#include <ed_device.h>
 
 class ElemerPort;
 
@@ -33,7 +33,7 @@ struct RawAdcData {
 int inline id1 = qRegisterMetaType<RawAdcData>("RawAdcData");
 int inline id2 = qRegisterMetaType<RawAdcData*>("RawAdcData*");
 
-class Irt5501 final : public Elemer::AsciiDevice {
+class Irt5501 final : public Elemer::Device {
     Q_OBJECT
 
 public:
@@ -42,8 +42,7 @@ public:
     Elemer::DeviceType type() const override { return Elemer::IRT5501; }
 
     bool getAdcRawData();
-    bool getAdcRawDataB(RawAdcData& data);
 
 signals:
-    void Raw(const RawAdcData&);
+    void RawAdcData(const RawAdcData&);
 };
