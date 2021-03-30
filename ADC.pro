@@ -1,18 +1,15 @@
 QT       += core gui serialport multimedia
-#CONFIG += console
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 DESTDIR = $$_PRO_FILE_PWD_/bin
 
-include(devices/CommonInterfaces/CommonInterfaces.pri)
-include(devices/MyProtokol/myprotokol.pri)
-include(devices/ElemerDevice/ElemerDevice.pri)
+include(CommonInterfaces/CommonInterfaces.pri)
+include(MyProtokol/myprotokol.pri)
+include(ElemerDevice/ElemerDevice.pri)
 
 #CONFIG += c++17
-QMAKE_CXXFLAGS += /std:c++latest
-QMAKE_CXXFLAGS += /await
-DEFINES += __cpp_lib_coroutine
+QMAKE_CXXFLAGS += /std:c++latest # c++20
 
 TARGET = TestADC
 TEMPLATE = app
@@ -49,10 +46,8 @@ HEADERS += \
     myled.h \
     testerth.h \
 
-
 FORMS += \
     mainwindow.ui
 
 DEFINES += \
-#    EL_ALWAYS_OPEN \
     EL_LOG
