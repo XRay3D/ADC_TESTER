@@ -1,7 +1,7 @@
 #pragma once
 
+#include "devices/irt5501.h"
 #include <QAbstractTableModel>
-#include <hw/irt5501.h>
 #include <qglobal.h>
 
 typedef struct ADC {

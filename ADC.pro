@@ -5,9 +5,9 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 DESTDIR = $$_PRO_FILE_PWD_/bin
 
-include(../CommonInterfaces/CommonInterfaces.pri)
-include(../ElemerDevice/ElemerDevice.pri)
-include(../MyProtokol/myprotokol.pri)
+include(devices/CommonInterfaces/CommonInterfaces.pri)
+include(devices/MyProtokol/myprotokol.pri)
+include(devices/ElemerDevice/ElemerDevice.pri)
 
 #CONFIG += c++17
 QMAKE_CXXFLAGS += /std:c++latest
@@ -30,24 +30,24 @@ DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs depr
 
 SOURCES += \
     adcdatamodel.cpp \
-    hw/interface.cpp \
-    hw/irt5501.cpp \
-    hw/irt5920.cpp \
-    hw/tester.cpp \
+    devices/devices.cpp \
+    devices/irt5501.cpp \
+    devices/irt5920.cpp \
+    devices/tester.cpp \
     main.cpp \
     mainwindow.cpp \
     myled.cpp \
-    testerth.cpp
+    testerth.cpp \
 
 HEADERS += \
     adcdatamodel.h \
-    hw/interface.h \
-    hw/irt5501.h \
-    hw/irt5920.h \
-    hw/tester.h \
+    devices/devices.h \
+    devices/irt5501.h \
+    devices/irt5920.h \
+    devices/tester.h \
     mainwindow.h \
     myled.h \
-    testerth.h
+    testerth.h \
 
 
 FORMS += \

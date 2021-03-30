@@ -1,15 +1,15 @@
 #include "mainwindow.h"
-#include "adcdatamodel.h"
-#include "testerth.h"
 #include "ui_mainwindow.h"
+
+#include "adcdatamodel.h"
+#include "devices/devices.h"
+#include "testerth.h"
 
 #include <QMessageBox>
 #include <QSerialPortInfo>
 #include <QSettings>
 #include <algorithm>
 #include <ranges>
-
-#include <hw/interface.h>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -46,29 +46,29 @@ MainWindow::MainWindow(QWidget* parent)
 
     readSettings();
 
-    connect(mi::irtAdc(), &Irt5501::RawAdcData, model, &AdcDataModel::setRawAdcData);
-    connect(mi::irtAdc(), &Irt5501::RawAdcData, this, &MainWindow::autoRunTest);
-    connect(mi::irtI(), &Irt5920::Value, model, &AdcDataModel::setCurrent);
-    connect(mi::irtU(), &Irt5920::Value, model, &AdcDataModel::setVoltage);
+    connect(Devices::irtAdc(), &Irt5501::rawAdcData, model, &AdcDataModel::setRawAdcData);
+    connect(Devices::irtAdc(), &Irt5501::rawAdcData, this, &MainWindow::autoRunTest);
+    connect(Devices::irtI(), &Irt5920::value, model, &AdcDataModel::setCurrent);
+    connect(Devices::irtU(), &Irt5920::value, model, &AdcDataModel::setVoltage);
 
-    connect(&getValuesTimer, &QTimer::timeout, mi::irtAdc(), &Irt5501::getAdcRawData);
-    connect(&getValuesTimer, &QTimer::timeout, mi::irtI(), &Irt5920::getVal);
-    connect(&getValuesTimer, &QTimer::timeout, mi::irtU(), &Irt5920::getVal);
+    connect(&getValuesTimer, &QTimer::timeout, Devices::irtAdc(), &Irt5501::getAdcRawData);
+    connect(&getValuesTimer, &QTimer::timeout, Devices::irtI(), &Irt5920::getVal);
+    connect(&getValuesTimer, &QTimer::timeout, Devices::irtU(), &Irt5920::getVal);
 
     connect(tester, &TesterTh::messageR, this, &MainWindow::messageR);
     connect(tester, &TesterTh::messageG, this, &MainWindow::messageG);
     connect(tester, &TesterTh::messageB, this, &MainWindow::messageB);
 
-    connect(tester, &TesterTh::currentTest, mi::tester(), &Tester::setStage);
+    connect(tester, &TesterTh::currentTest, Devices::tester(), &Tester::setStage);
     connect(tester, &TesterTh::currentTest, ui->comboBox, &QComboBox::setCurrentIndex);
-    connect(ui->comboBox, qOverload<int>(&QComboBox::currentIndexChanged), mi::tester(), &Tester::setStage);
+    connect(ui->comboBox, qOverload<int>(&QComboBox::currentIndexChanged), Devices::tester(), &Tester::setStage);
 
     on_pbPing_clicked();
 }
 
 MainWindow::~MainWindow()
 {
-    mi::tester()->setStage(0);
+    Devices::tester()->setStage(0);
 
     getValuesTimer.stop();
 
@@ -81,13 +81,13 @@ void MainWindow::on_pbPing_clicked()
 {
     getValuesTimer.stop();
     QString str;
-    if (!mi::tester()->ping(ui->cbxPortRelay->currentText(), 57600))
+    if (!Devices::tester()->ping(ui->cbxPortRelay->currentText(), 57600))
         str.append("PortRelay!\n");
-    if (!mi::irtAdc()->ping(ui->cbxPortAdc->currentText(), 9600, 1))
+    if (!Devices::irtAdc()->ping(ui->cbxPortAdc->currentText(), 9600, 1))
         str.append("PortAdc!\n");
-    if (!mi::irtI()->ping(ui->cbxPortI->currentText(), 9600, 2))
+    if (!Devices::irtI()->ping(ui->cbxPortI->currentText(), 9600, 2))
         str.append("PortI!\n");
-    if (!mi::irtU()->ping(ui->cbxPortU->currentText(), 9600, 3))
+    if (!Devices::irtU()->ping(ui->cbxPortU->currentText(), 9600, 3))
         str.append("PortU!\n");
     if (str.isEmpty()) {
         //        QMessageBox::information(this, "", "Ok");
@@ -128,7 +128,7 @@ void MainWindow::readSettings()
 void MainWindow::finished()
 {
     ui->pbTest->setChecked(false);
-    mi::tester()->setStage(0);
+    Devices::tester()->setStage(0);
     ui->comboBox->setCurrentIndex(0);
     getValuesTimer.start();
     tester->results() ? yes.play()

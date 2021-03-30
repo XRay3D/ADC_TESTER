@@ -2,12 +2,9 @@
 
 #include <ed_device.h>
 
-class ElemerPort;
-
-[[maybe_unused]] constexpr double threshold = 0.00009;
+[[maybe_unused]] constexpr double threshold = 0.00009; //0.0001
 
 #pragma pack(push, 1)
-
 struct RawAdcData {
     uint8_t ready;
     uint8_t stat;
@@ -27,22 +24,20 @@ struct RawAdcData {
         return (cs == controlSum);
     }
 };
-
 #pragma pack(pop)
-
-int inline id1 = qRegisterMetaType<RawAdcData>("RawAdcData");
-int inline id2 = qRegisterMetaType<RawAdcData*>("RawAdcData*");
 
 class Irt5501 final : public Elemer::Device {
     Q_OBJECT
 
 public:
     Irt5501(QObject* parent = nullptr);
-
-    Elemer::DeviceType type() const override { return Elemer::IRT5501; }
+    Elemer::DeviceType type() const override { return Elemer::IRT_5501; }
 
     bool getAdcRawData();
 
 signals:
-    void RawAdcData(const RawAdcData&);
+    void rawAdcData(const RawAdcData&);
 };
+
+int inline id1 = qRegisterMetaType<RawAdcData>("RawAdcData");
+int inline id2 = qRegisterMetaType<RawAdcData*>("RawAdcData*");

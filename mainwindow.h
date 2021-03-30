@@ -5,7 +5,7 @@
 #include <QMessageBox>
 #include <QSound>
 #include <QTimer>
-#include <hw/irt5501.h>
+#include "devices/irt5501.h"
 
 class QSound;
 

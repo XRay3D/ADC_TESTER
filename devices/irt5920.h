@@ -8,10 +8,10 @@ class Irt5920 final : public Elemer::Device {
 public:
     Irt5920(QObject* parent = nullptr);
 
-    Elemer::DeviceType type() const override { return Elemer::IRT5920; }
+    Elemer::DeviceType type() const override { return Elemer::IRT_5920; }
 
     bool getVal();
 
 signals:
-    void Value(double data);
+    void value(double data);
 };

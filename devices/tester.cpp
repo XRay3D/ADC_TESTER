@@ -19,7 +19,7 @@ public:
     void writeSlot(const QByteArray& data);
     Tester* m_t;
     using func = void (Tester::*)(Parcel*);
-    QVector<func> m_f;
+    std::vector<func> m_f;
 };
 
 Tester::Tester(QObject* parent)
@@ -29,18 +29,6 @@ Tester::Tester(QObject* parent)
     port->moveToThread(&m_portThread);
     connect(&m_portThread, &QThread::finished, port, &QObject::deleteLater);
     m_portThread.start(QThread::InheritPriority);
-    //    m_f[PING] = &Tester::RxPing;
-    //    m_f[GET_STAGE] = &Tester::RxGetStage;
-    //    m_f[SET_STAGE] = &Tester::RxSetStage;
-    //    m_f[READY] = &Tester::RxReady;
-    //    m_f[BUFFER_OVERFLOW] = &Tester::RxBufferOverflow;
-    //    m_f[WRONG_COMMAND] = &Tester::RxWrongCommand;
-    //    m_f[TEXTUAL_PARCEL] = &Tester::RxTextualParcel;
-    //    m_f[CRC_ERROR] = &Tester::RxCrcError;
-
-    //    port->setBaudRate(QSerialPort::Baud57600);
-    //    port->setParity(QSerialPort::NoParity);
-    //    port->setFlowControl(QSerialPort::NoFlowControl);
 }
 
 Tester::~Tester()
@@ -180,32 +168,6 @@ void Tester::RxNullFunction(Parcel* data)
     Q_UNUSED(data)
     //m_semaphore.release();
 }
-
-//bool Tester::checkConnection()
-//{
-//    return false;
-//}
-
-//void Tester::readyReadSlot()
-//{
-//    QMutexLocker locker(&m_readMutex);
-//    m_data.append(port->readAll());
-//    for (int i = 0; i < m_data.size() - 3; ++i) {
-//        const Parcel* const parcel = reinterpret_cast<const Parcel*>(m_data.constData() + i);
-//        if (parcel->start == RX) {
-//            if ((parcel->len + i) <= m_data.size()) {
-//                if (checkParcel(m_data.mid(i, parcel->len)))
-//                    (this->*m_f[parcel->cmd])(*parcel);
-//                else {
-//                    (this->*m_f[CRC_ERROR])(*parcel);
-//                    m_data.clear();
-//                }
-//                m_data.remove(0, i + parcel->len);
-//                i = -1;
-//            }
-//        }
-//    }
-//}
 
 /////////////////////////////////////////
 

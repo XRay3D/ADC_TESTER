@@ -1,6 +1,6 @@
 #include "testerth.h"
 #include "adcdatamodel.h"
-#include "hw/interface.h"
+#include "devices/devices.h"
 
 #include <QDebug>
 #include <QTime>
@@ -9,9 +9,9 @@ TesterTh::TesterTh(AdcDataModel* model, QObject* parent)
     : QThread(parent)
     , model(model)
 {
-    connect(this, &TesterTh::getValues, mi::irtAdc(), &Irt5501::getAdcRawData);
-    connect(this, &TesterTh::getValues, mi::irtI(), &Irt5920::getVal);
-    connect(this, &TesterTh::getValues, mi::irtU(), &Irt5920::getVal);
+    connect(this, &TesterTh::getValues, Devices::irtAdc(), &Irt5501::getAdcRawData);
+    connect(this, &TesterTh::getValues, Devices::irtI(), &Irt5920::getVal);
+    connect(this, &TesterTh::getValues, Devices::irtU(), &Irt5920::getVal);
 }
 
 bool TesterTh::results() const { return m_resultsAll; }
@@ -34,21 +34,24 @@ void TesterTh::run()
 
         QTime time;
         time.start();
-        while (time.elapsed() < (testNum < Test3 ? 6000 : 2000)) {
+        double avg_ = model->rawAdcData().v2;
+        while (time.elapsed() < (testNum < Test3 ? 6000 : 2000) || (testNum == Test1 && avg_ > threshold)) {
             msleep(100);
-            mi::irtAdc()->waitAllReset();
+            Devices::irtAdc()->waitAllReset();
             emit getValues();
-            qDebug() << "waitAll 1" << mi::irtAdc()->waitAll(3, 1000);
-            if (isInterruptionRequested() || model->rawAdcData().stat == 0xFF)
+            qDebug() << "waitAll 1" << Devices::irtAdc()->waitAll(3, 1000);
+            avg_ += model->rawAdcData().v2;
+            avg_ /= 2.0;
+            if (isInterruptionRequested() || !model->rawAdcData().getReady())
                 return;
         }
 
         adc.reset();
         int avg {};
         do {
-            mi::irtAdc()->waitAllReset();
+            Devices::irtAdc()->waitAllReset();
             emit getValues();
-            qDebug() << "waitAll 2" << mi::irtAdc()->waitAll(3, 1000);
+            qDebug() << "waitAll 2" << Devices::irtAdc()->waitAll(3, 1000);
             msleep(500);
 
             RawAdcData data { model->rawAdcData() };
@@ -76,6 +79,7 @@ void TesterTh::run()
 
 void TesterTh::test1()
 {
+    //0.00009
     qDebug(__FUNCTION__);
     // Ток потребления и напряжение встроенного БП без нагрузки.
     m_results[Test1] = true;

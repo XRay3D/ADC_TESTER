@@ -1,7 +1,8 @@
+#include "devices/devices.h"
 #include "mainwindow.h"
+
 #include <QApplication>
 #include <QSettings>
-#include <hw/interface.h>
 
 int main(int argc, char* argv[])
 {
@@ -13,8 +14,8 @@ int main(int argc, char* argv[])
     QSettings::setDefaultFormat(QSettings::IniFormat);
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, QApplication::applicationDirPath());
 
-    mi mi_;
-    Q_UNUSED(mi_)
+    [[maybe_unused]] Devices dev;
+    [[maybe_unused]] Devices dev2;
 
     MainWindow w;
     w.show();

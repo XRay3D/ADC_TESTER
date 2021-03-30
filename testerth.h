@@ -3,7 +3,7 @@
 #include <QThread>
 #include <ed_device.h>
 #include <qglobal.h>
-#include <hw/irt5501.h>
+#include "devices/irt5501.h"
 
 class AdcDataModel;
 class TesterTh : public QThread {
