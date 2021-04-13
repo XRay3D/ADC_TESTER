@@ -1,11 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "devices/irt5501.h"
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QSound>
 #include <QTimer>
-#include "devices/irt5501.h"
 
 class QSound;
 
@@ -61,7 +61,7 @@ private:
     TesterTh* tester;
     QSound no;
     QSound yes;
-    bool autoRunTestFl {};
+    bool autoRunTestFl{};
     QMessageBox msgBox;
 
     QVector<MyLed*> leds;

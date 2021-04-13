@@ -6,39 +6,32 @@
 #include <QThread>
 #include <QVector>
 #include <commoninterfaces.h>
-#include <myprotokol.h>
+#include <xrdevice.h>
 
 enum CommandEnum {
-    PING,
-    GET_STAGE,
-    SET_STAGE,
-    READY,
-    BUFFER_OVERFLOW,
-    WRONG_COMMAND,
-    TEXTUAL_PARCEL,
-    CRC_ERROR
+    SetSwitch = 1,
+    GetSwitch,
+    SetSwitchResistance,
+    GetSwitchResistance,
+    TestSwitch,
 };
 
 #pragma pack(push, 1)
+struct K {
+    uint8_t data[6]{};
+};
 #pragma pack(pop)
 
-class Tester;
-
-class CallBack {
-public:
-    virtual ~CallBack() { }
-    virtual void RxPing(Parcel* data) = 0;
-    virtual void RxGetStage(Parcel* data) = 0;
-    virtual void RxSetStage(Parcel* data) = 0;
-    virtual void RxReady(Parcel* data) = 0;
-    virtual void RxBufferOverflow(Parcel* data) = 0;
-    virtual void RxWrongCommand(Parcel* data) = 0;
-    virtual void RxTextualParcel(Parcel* data) = 0;
-    virtual void RxCrcError(Parcel* data) = 0;
-    virtual void RxNullFunction(Parcel* data) = 0;
+struct Callback {
+    virtual ~Callback() { }
+    virtual void RxSetSwitch(const QByteArray& data) = 0;
+    virtual void RxGetSwitch(const QByteArray& data) = 0;
+    virtual void RxSetSwitchResistance(const QByteArray& data) = 0;
+    virtual void RxGetSwitchResistance(const QByteArray& data) = 0;
+    virtual void RxTestSwitch(const QByteArray& data) = 0;
 };
 
-class Tester final : public QObject, public CommonInterfaces, private MyProtokol, public CallBack {
+class Tester final : public XrProtokol::Device, Callback {
     Q_OBJECT
     friend class TesterPort;
 
@@ -46,33 +39,37 @@ public:
     Tester(QObject* parent = nullptr);
     ~Tester();
 
-    bool ping(const QString& PortName = {}, int baud = 9600, int = {}) override;
-    bool setStage(quint8 stage);
-    bool getStage(int& stage);
+    bool setSwitch(uint8_t test);
+    bool getSwitch(uint8_t& test);
+    bool setSwitchResistance(const K& value);
+    bool getSwitchResistance(K& value);
+    bool testSwitch();
 
-signals:
-    void open(int mode) override;
-    void close() override;
-    void write(const QByteArray& data);
+    // Device interface
+    XrProtokol::Type type() const override;
+
+    void RxSetSwitch(const QByteArray& data) override;
+    void RxGetSwitch(const QByteArray& data) override;
+    void RxSetSwitchResistance(const QByteArray& data) override;
+    void RxGetSwitchResistance(const QByteArray& data) override;
+    void RxTestSwitch(const QByteArray& data) override;
+    void RxTestSwitch2(const QByteArray& data);
 
 private:
-    QByteArray m_data;
     QMutex m_mutex;
-    QSemaphore m_semaphore;
+    std::vector<uint8_t> adcData;
 
-    QThread m_portThread;
-    TesterPort* port;
+    //    bool ping(const QString& PortName = {}, int baud = 115200, int = {}) override;
+    //        bool setSwitch(quint8 stage);
+    //    bool getStage(int& stage);
 
-    int m_stage;
-    mutable bool m_result;
-
-    void RxPing(Parcel* data) override;
-    void RxGetStage(Parcel* data) override;
-    void RxSetStage(Parcel* data) override;
-    void RxReady(Parcel* data) override;
-    void RxBufferOverflow(Parcel* data) override;
-    void RxWrongCommand(Parcel* data) override;
-    void RxTextualParcel(Parcel* data) override;
-    void RxCrcError(Parcel* data) override;
-    void RxNullFunction(Parcel* data) override;
+    //    void RxPing(XrProtokol::Parcel* data) override;
+    //    void RxGetStage(XrProtokol::Parcel* data) override;
+    //    void RxSetStage(XrProtokol::Parcel* data) override;
+    //    void RxReady(XrProtokol::Parcel* data) override;
+    //    void RxBufferOverflow(XrProtokol::Parcel* data) override;
+    //    void RxWrongCommand(XrProtokol::Parcel* data) override;
+    //    void RxText(XrProtokol::Parcel* data) override;
+    //    void RxCrcError(XrProtokol::Parcel* data) override;
+    //    void RxNullFunction(XrProtokol::Parcel* data) override;
 };

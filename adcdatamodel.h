@@ -14,8 +14,7 @@ typedef struct ADC {
     double U = 0.0;
     double I = 0.0;
 
-    void reset()
-    {
+    void reset() {
         //status = 0;
         U1 = 0.0;
         U2 = 0.0;
@@ -24,22 +23,19 @@ typedef struct ADC {
         I = 0.0;
     }
 
-    ADC operator+=(const QVector<double>& v)
-    {
+    ADC operator+=(const QVector<double>& v) {
         const double* p = v.data();
         U += *p++;
         I += *p++;
         return *this;
     }
-    ADC operator+=(const RawAdcData& data)
-    {
+    ADC operator+=(const RawAdcData& data) {
         U1 += data.v1;
         U2 += data.v2;
         U3 += data.v3;
         return *this;
     }
-    ADC operator/=(double v)
-    {
+    ADC operator/=(double v) {
         U1 /= v;
         U2 /= v;
         U3 /= v;
@@ -51,9 +47,6 @@ typedef struct ADC {
 
 class AdcDataModel : public QAbstractTableModel {
     Q_OBJECT
-    RawAdcData m_rawAdcData[2] {};
-    double m_current[2] {};
-    double m_voltage[2] {};
 
 public:
     explicit AdcDataModel(QObject* parent = nullptr);
@@ -65,7 +58,8 @@ public:
     void Raw(const RawAdcData& raw);
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
     Qt::ItemFlags flags(const QModelIndex& index) const override;
-    enum {
+
+    enum Rows {
         Ready,
         ControlSum,
         AdcStatus,
@@ -74,7 +68,18 @@ public:
         AdcVoltage3,
         Voltage,
         Current,
-        RowCount
+        RowCount,
+    };
+
+    enum Columns {
+        Measuted,
+        Test1,
+        Test2,
+        Test3,
+        Test4,
+        Test5,
+        Test6,
+        ColumnCount,
     };
 
     void setCurrent(double current);
@@ -85,5 +90,12 @@ public:
     double voltage() const;
     RawAdcData rawAdcData() const;
 
+    void setCurrentTest(int currentTest);
+
+private:
+    RawAdcData m_rawAdcData[ColumnCount]{};
+    double m_current[ColumnCount]{};
+    double m_voltage[ColumnCount]{};
+    int m_currentTest = 0;
 signals:
 };

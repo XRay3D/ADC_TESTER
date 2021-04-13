@@ -13,34 +13,8 @@ class Devices {
         Count
     };
 
-    //    struct TD {
-    //        //        TD(QObject* const object)
-    //        //            : object { object }
-    //        TD& operator=(QObject* object)
-    //        {
-    //            qDebug(__FUNCTION__);
-    //            object->moveToThread(&thread);
-    //            thread.connect(&thread, &QThread::finished, object, &QObject::deleteLater);
-    //            thread.start(QThread::NormalPriority);
-    //            return (*this);
-    //        }
-    //        //        ~TD()
-    //        //        {
-    //        //            qDebug(__FUNCTION__);
-    //        //            thread.quit();
-    //        //            thread.wait();
-    //        //        }
-
-    //        template <class T>
-    //        operator T*() { return reinterpret_cast<T*>(object); }
-
-    //        QObject* object;
-    //        QThread thread;
-    //    };
-
     static inline QSemaphore semafore;
-    //    static inline TD devices[Count]; // = { new Irt5501, new Irt5920, new Irt5920, new Tester };
-    static inline QThread threads[Count]; // = { new Irt5501, new Irt5920, new Irt5920, new Tester };
+    static inline QThread threads[Count];
 
     static inline Irt5501* m_irt1 = nullptr;
     static inline Irt5920* m_irt2 = nullptr;

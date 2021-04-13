@@ -1,15 +1,14 @@
 #include "devices.h"
 
-Devices::Devices()
-{
-    if (!semafore.available()) {
-        QObject* objects[] {
+Devices::Devices() {
+    if(!semafore.available()) {
+        QObject* objects[]{
             m_irt1 = new Irt5501,
             m_irt2 = new Irt5920,
             m_irt3 = new Irt5920,
             m_tester = new Tester,
         };
-        for (int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i) {
             objects[i]->moveToThread(&threads[i]);
             threads[i].connect(&threads[i], &QThread::finished, objects[i], &QObject::deleteLater);
             threads[i].start(QThread::NormalPriority);
@@ -18,11 +17,10 @@ Devices::Devices()
     semafore.release();
 }
 
-Devices::~Devices()
-{
+Devices::~Devices() {
     semafore.acquire();
-    if (!semafore.available()) {
-        for (auto& thr : threads) {
+    if(!semafore.available()) {
+        for(auto& thr : threads) {
             thr.quit();
             thr.wait();
         }

@@ -3,25 +3,23 @@
 #include <QColor>
 
 AdcDataModel::AdcDataModel(QObject* parent)
-    : QAbstractTableModel(parent)
-{
+    : QAbstractTableModel(parent) {
 }
 
 int AdcDataModel::rowCount(const QModelIndex&) const { return RowCount; }
 
-int AdcDataModel::columnCount(const QModelIndex&) const { return 1; }
+int AdcDataModel::columnCount(const QModelIndex&) const { return ColumnCount; }
 
-QVariant AdcDataModel::data(const QModelIndex& index, int role) const
-{
-    if (role == Qt::DisplayRole)
-        switch (index.row()) {
+QVariant AdcDataModel::data(const QModelIndex& index, int role) const {
+    if(role == Qt::DisplayRole)
+        switch(index.row()) {
         case Ready:
-            return QChar { m_rawAdcData[0].getReady() ? '+' : '-' };
+            return QChar{m_rawAdcData[0].getReady() ? '+' : '-'};
         case ControlSum:
-            return QChar { m_rawAdcData[0].csOk() ? '+' : '-' };
+            return QChar{m_rawAdcData[0].csOk() ? '+' : '-'};
         case AdcStatus: {
             QString str = QString::number(m_rawAdcData[index.column()].stat, 2);
-            str = QString("00000000").left(8 - str.length()) + str;
+            str = QString("00000000").left(8 - str.length()) + str + '(' + QString::number(m_rawAdcData[index.column()].stat) + ')';
             return str; //m_rawAdcData.stat;
         }
         case AdcVoltage1:
@@ -47,26 +45,25 @@ QVariant AdcDataModel::data(const QModelIndex& index, int role) const
         default:
             return {};
         }
-    else if (role == Qt::TextAlignmentRole)
+    else if(role == Qt::TextAlignmentRole)
         return Qt::AlignCenter;
-    else if (role == Qt::BackgroundColorRole)
-        switch (index.row()) {
+    else if(role == Qt::BackgroundColorRole)
+        switch(index.row()) {
         case AdcVoltage1:
-            return (0.1 > abs(m_rawAdcData[0].v1) && abs(m_rawAdcData[0].v1) > threshold) ? QColor { 255, 127, 127 }
-                                                                                          : QColor { 127, 255, 127 };
+            return (0.1 > abs(m_rawAdcData[index.column()].v1) && abs(m_rawAdcData[index.column()].v1) > threshold) ? QColor{255, 127, 127}
+                                                                                                                    : QColor{127, 255, 127};
         case AdcVoltage2:
-            return (0.1 > abs(m_rawAdcData[0].v1) && abs(m_rawAdcData[0].v2) > threshold) ? QColor { 255, 127, 127 }
-                                                                                          : QColor { 127, 255, 127 };
+            return (0.1 > abs(m_rawAdcData[index.column()].v1) && abs(m_rawAdcData[index.column()].v2) > threshold) ? QColor{255, 127, 127}
+                                                                                                                    : QColor{127, 255, 127};
         case AdcVoltage3:
-            return (0.1 > abs(m_rawAdcData[0].v3) && abs(m_rawAdcData[0].v3) > threshold) ? QColor { 255, 127, 127 }
-                                                                                          : QColor { 127, 255, 127 };
+            return (0.1 > abs(m_rawAdcData[index.column()].v3) && abs(m_rawAdcData[index.column()].v3) > threshold) ? QColor{255, 127, 127}
+                                                                                                                    : QColor{127, 255, 127};
         }
     return {};
 }
 
-QVariant AdcDataModel::headerData(int section, Qt::Orientation orientation, int role) const
-{
-    static const QStringList vData {
+QVariant AdcDataModel::headerData(int section, Qt::Orientation orientation, int role) const {
+    static const QStringList vData{
         "Готов",
         "Контрольная сумма",
         "Статус",
@@ -76,59 +73,54 @@ QVariant AdcDataModel::headerData(int section, Qt::Orientation orientation, int 
         "Выходгое напряжение, В",
         "Ток потребления, мА",
     };
-    static const QStringList hData {
+    static const QStringList hData{
         "Значения",
-        "Δ, x 1000",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
     };
-    if (role == Qt::DisplayRole) {
+    if(role == Qt::DisplayRole) {
         return orientation == Qt::Horizontal ? hData[section]
                                              : vData[section];
-    } else if (role == Qt::TextAlignmentRole)
+    } else if(role == Qt::TextAlignmentRole)
         return Qt::AlignCenter;
     return {};
 }
 
-Qt::ItemFlags AdcDataModel::flags(const QModelIndex&) const
-{
+Qt::ItemFlags AdcDataModel::flags(const QModelIndex&) const {
     return Qt::ItemIsEnabled;
 }
 
-void AdcDataModel::setVoltage(double voltage)
-{
-    m_voltage[1] = (m_voltage[0] - voltage) * 1000.0;
+void AdcDataModel::setVoltage(double voltage) {
+    //    m_voltage[1] = (m_voltage[0] - voltage) * 1000.0;
     m_voltage[0] = voltage;
-    emit dataChanged(createIndex(Voltage, 0), createIndex(Voltage, 0), { Qt::DisplayPropertyRole });
+    emit dataChanged(createIndex(Voltage, 0), createIndex(Voltage, 0), {Qt::DisplayPropertyRole});
 }
 
-void AdcDataModel::setCurrent(double current)
-{
-    m_current[1] = (m_current[0] - current) * 1000.0;
+void AdcDataModel::setCurrent(double current) {
+    //    m_current[1] = (m_current[0] - current) * 1000.0;
     m_current[0] = current;
-    emit dataChanged(createIndex(Current, 0), createIndex(Current, 0), { Qt::DisplayPropertyRole });
+    emit dataChanged(createIndex(Current, 0), createIndex(Current, 0), {Qt::DisplayPropertyRole});
 }
 
-auto operator-(const RawAdcData& l, const RawAdcData& r)
-{
-    return RawAdcData { {}, {},
-        l.v1 - r.v1,
-        l.v2 - r.v2,
-        l.v3 - r.v3, {} };
-}
-auto operator*(const RawAdcData& l, double r)
-{
-    return RawAdcData { {}, {},
-        static_cast<float>(l.v1 * r),
-        static_cast<float>(l.v2 * r),
-        static_cast<float>(l.v3 * r), {} };
-}
-void AdcDataModel::setRawAdcData(const RawAdcData& rawAdcData)
-{
-    m_rawAdcData[1] = (m_rawAdcData[0] - rawAdcData) * 1000.0;
+void AdcDataModel::setRawAdcData(const RawAdcData& rawAdcData) {
+    //    m_rawAdcData[1] = (m_rawAdcData[0] - rawAdcData) * 1000.0;
     m_rawAdcData[0] = rawAdcData;
-    emit dataChanged(createIndex(AdcStatus, 0), createIndex(AdcVoltage3, 0), { Qt::DisplayPropertyRole });
+    emit dataChanged(createIndex(AdcStatus, 0), createIndex(AdcVoltage3, 0), {Qt::DisplayPropertyRole});
 }
 
 RawAdcData AdcDataModel::rawAdcData() const { return m_rawAdcData[0]; }
+
+void AdcDataModel::setCurrentTest(int currentTest) {
+    m_currentTest = currentTest;
+    m_rawAdcData[m_currentTest] = m_rawAdcData[0];
+    m_current[m_currentTest] = m_current[0];
+    m_voltage[m_currentTest] = m_voltage[0];
+    emit dataChanged(createIndex(AdcStatus, m_currentTest), createIndex(AdcVoltage3, m_currentTest), {Qt::DisplayPropertyRole});
+}
 
 double AdcDataModel::voltage() const { return m_voltage[0]; }
 

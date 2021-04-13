@@ -18,8 +18,7 @@ MainWindow::MainWindow(QWidget* parent)
     , tester(new TesterTh(model))
     , no(QStringLiteral("C:/Windows/Media/Windows Critical Stop.wav"))
     , yes(QStringLiteral("C:/Windows/Media/Windows Notify.wav"))
-    , msgBox("", "Тест завершён", QMessageBox::Information, QMessageBox::Ok, {}, {}, this)
-{
+    , msgBox("", "Тест завершён", QMessageBox::Information, QMessageBox::Ok, {}, {}, this) {
     ui->setupUi(this);
 
     leds = {
@@ -30,11 +29,11 @@ MainWindow::MainWindow(QWidget* parent)
         ui->widget_5,
         ui->widget_6,
     };
-    auto availablePorts { QSerialPortInfo::availablePorts().toVector() };
+    auto availablePorts{QSerialPortInfo::availablePorts().toVector()};
     std::ranges::sort(availablePorts, {}, [](const QSerialPortInfo& info) { return info.portName().midRef(3).toInt(); });
 
-    for (auto& portInfo : availablePorts) {
-        if (portInfo.manufacturer().contains("FTDI"))
+    for(auto& portInfo : availablePorts) {
+        if(portInfo.manufacturer().contains("FTDI"))
             ui->cbxPortRelay->addItem(portInfo.portName());
         ui->cbxPortAdc->addItem(portInfo.portName());
         ui->cbxPortI->addItem(portInfo.portName());
@@ -59,16 +58,15 @@ MainWindow::MainWindow(QWidget* parent)
     connect(tester, &TesterTh::messageG, this, &MainWindow::messageG);
     connect(tester, &TesterTh::messageB, this, &MainWindow::messageB);
 
-    connect(tester, &TesterTh::currentTest, Devices::tester(), &Tester::setStage);
+    connect(tester, &TesterTh::currentTest, Devices::tester(), &Tester::setSwitch);
     connect(tester, &TesterTh::currentTest, ui->comboBox, &QComboBox::setCurrentIndex);
-    connect(ui->comboBox, qOverload<int>(&QComboBox::currentIndexChanged), Devices::tester(), &Tester::setStage);
+    connect(ui->comboBox, qOverload<int>(&QComboBox::currentIndexChanged), Devices::tester(), &Tester::setSwitch);
 
     on_pbPing_clicked();
 }
 
-MainWindow::~MainWindow()
-{
-    Devices::tester()->setStage(0);
+MainWindow::~MainWindow() {
+    Devices::tester()->setSwitch(0);
 
     getValuesTimer.stop();
 
@@ -77,19 +75,18 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_pbPing_clicked()
-{
+void MainWindow::on_pbPing_clicked() {
     getValuesTimer.stop();
     QString str;
-    if (!Devices::tester()->ping(ui->cbxPortRelay->currentText(), 57600))
+    if(!Devices::tester()->ping(ui->cbxPortRelay->currentText()))
         str.append("PortRelay!\n");
-    if (!Devices::irtAdc()->ping(ui->cbxPortAdc->currentText(), 9600, 1))
-        str.append("PortAdc!\n");
-    if (!Devices::irtI()->ping(ui->cbxPortI->currentText(), 9600, 2))
-        str.append("PortI!\n");
-    if (!Devices::irtU()->ping(ui->cbxPortU->currentText(), 9600, 3))
-        str.append("PortU!\n");
-    if (str.isEmpty()) {
+        if (!Devices::irtAdc()->ping(ui->cbxPortAdc->currentText(), 9600, 1))
+            str.append("PortAdc!\n");
+        if (!Devices::irtI()->ping(ui->cbxPortI->currentText(), 9600, 2))
+            str.append("PortI!\n");
+        if (!Devices::irtU()->ping(ui->cbxPortU->currentText(), 9600, 3))
+            str.append("PortU!\n");
+    if(str.isEmpty()) {
         //        QMessageBox::information(this, "", "Ok");
         getValuesTimer.start(1000);
     } else {
@@ -99,8 +96,7 @@ void MainWindow::on_pbPing_clicked()
     ui->groupBox_3->setEnabled(str.isEmpty());
 }
 
-void MainWindow::writeSettings()
-{
+void MainWindow::writeSettings() {
     QSettings settings;
     settings.beginGroup("MainWindow");
     settings.setValue("Geometry", saveGeometry());
@@ -112,8 +108,7 @@ void MainWindow::writeSettings()
     settings.endGroup();
 }
 
-void MainWindow::readSettings()
-{
+void MainWindow::readSettings() {
     QSettings settings;
     settings.beginGroup("MainWindow");
     restoreGeometry(settings.value("Geometry").toByteArray());
@@ -125,16 +120,15 @@ void MainWindow::readSettings()
     settings.endGroup();
 }
 
-void MainWindow::finished()
-{
+void MainWindow::finished() {
     ui->pbTest->setChecked(false);
-    Devices::tester()->setStage(0);
+    Devices::tester()->setSwitch(0);
     ui->comboBox->setCurrentIndex(0);
     getValuesTimer.start();
     tester->results() ? yes.play()
                       : no.play();
 
-    for (int i = 0; i < 6; ++i)
+    for(int i = 0; i < 6; ++i)
         leds[i]->setLedColor(tester->getResults()[i] ? Qt::green : Qt::red);
 
     disconnect(tester, &QThread::finished, this, &MainWindow::finished);
@@ -142,61 +136,60 @@ void MainWindow::finished()
     //    QMessageBox::information(this, "", "Тесты закончились");
 }
 
-void MainWindow::messageR(const QString& text)
-{
-    ui->textEdit->setTextColor({ 100, 0, 0 });
+void MainWindow::messageR(const QString& text) {
+    ui->textEdit->setTextColor({100, 0, 0});
     ui->textEdit->append(text);
 }
 
-void MainWindow::messageG(const QString& text)
-{
-    ui->textEdit->setTextColor({ 0, 100, 0 });
+void MainWindow::messageG(const QString& text) {
+    ui->textEdit->setTextColor({0, 100, 0});
     ui->textEdit->append(text);
 }
 
-void MainWindow::messageB(const QString& text)
-{
-    ui->textEdit->setTextColor({ 0, 0, 0 });
+void MainWindow::messageB(const QString& text) {
+    ui->textEdit->setTextColor({0, 0, 0});
     ui->textEdit->append(text);
 }
 
-void MainWindow::autoRunTest(const RawAdcData& rawAdcData)
-{
-    if (tester->isRunning())
+void MainWindow::autoRunTest(const RawAdcData& rawAdcData) {
+    if(tester->isRunning())
         return;
-    if (rawAdcData.stat == 64 && !autoRunTestFl) {
+    if(rawAdcData.stat == 64 && !autoRunTestFl) {
         on_pbTest_clicked(true);
         autoRunTestFl = true;
-    } else if (rawAdcData.stat == 0xFF && autoRunTestFl) {
+    } else if(rawAdcData.stat == 0xFF && autoRunTestFl) {
         autoRunTestFl = false;
     }
 }
 
-void MainWindow::on_pbTest_clicked(bool checked)
-{
-    if (checked) {
-        ui->widget_1->setLedColor(Qt::yellow);
-        ui->widget_2->setLedColor(Qt::yellow);
-        ui->widget_3->setLedColor(Qt::yellow);
-        ui->widget_4->setLedColor(Qt::yellow);
-        ui->widget_5->setLedColor(Qt::yellow);
-        ui->widget_6->setLedColor(Qt::yellow);
+void MainWindow::on_pbTest_clicked(bool checked) {
+    if(1) {
+        if(checked) {
+            ui->widget_1->setLedColor(Qt::yellow);
+            ui->widget_2->setLedColor(Qt::yellow);
+            ui->widget_3->setLedColor(Qt::yellow);
+            ui->widget_4->setLedColor(Qt::yellow);
+            ui->widget_5->setLedColor(Qt::yellow);
+            ui->widget_6->setLedColor(Qt::yellow);
 
-        ui->textEdit->clear();
+            ui->textEdit->clear();
 
-        getValuesTimer.stop();
-        connect(tester, &QThread::finished, this, &MainWindow::finished);
+            getValuesTimer.stop();
+            connect(tester, &QThread::finished, this, &MainWindow::finished);
 
-        tester->start();
-        msgBox.accept();
-    } else {
-        disconnect(tester, &QThread::finished, this, &MainWindow::finished);
-        if (tester->isRunning()) {
-            tester->requestInterruption();
-            tester->wait();
+            tester->start();
             msgBox.accept();
+        } else {
+            disconnect(tester, &QThread::finished, this, &MainWindow::finished);
+            if(tester->isRunning()) {
+                tester->requestInterruption();
+                tester->wait();
+                msgBox.accept();
+            }
+            getValuesTimer.start();
         }
-        getValuesTimer.start();
+        ui->pbTest->setChecked(checked);
+    } else {
+        Devices::tester()->testSwitch();
     }
-    ui->pbTest->setChecked(checked);
 }

@@ -14,14 +14,19 @@ struct RawAdcData {
     uint8_t controlSum;
 
     bool getReady() const noexcept { return !(ready & 0x01); }
-    bool csOk() const noexcept
-    {
+    bool csOk() const noexcept {
         uint8_t cs = 0;
         const uint8_t* ptr = reinterpret_cast<const uint8_t*>(this);
-        for (size_t K = 1; K < sizeof(RawAdcData) - 1; ++K)
+        for(size_t K = 1; K < sizeof(RawAdcData) - 1; ++K)
             cs = cs + ptr[K];
         cs = ~cs;
         return (cs == controlSum);
+    }
+    friend auto operator-(const RawAdcData& l, const RawAdcData& r) {
+        return RawAdcData{{}, {}, l.v1 - r.v1, l.v2 - r.v2, l.v3 - r.v3, {}};
+    }
+    friend auto operator*(const RawAdcData& l, double r) {
+        return RawAdcData{{}, {}, static_cast<float>(l.v1 * r), static_cast<float>(l.v2 * r), static_cast<float>(l.v3 * r), {}};
     }
 };
 #pragma pack(pop)

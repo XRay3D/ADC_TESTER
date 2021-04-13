@@ -1,249 +1,141 @@
 #include "tester.h"
 
+#include <QDateTime>
 #include <QDebug>
+#include <QElapsedTimer>
 #include <QMessageBox>
 #include <QSerialPortInfo>
 #include <QTimer>
+#include <span>
 
 #define Dbg 0
+using namespace XrProtokol;
 
-class TesterPort : public QSerialPort, private MyProtokol {
-    void readSlot();
-    QByteArray m_data;
-    qint64 counter = 0;
-
-public:
-    TesterPort(Tester* t);
-    void closeSlot();
-    void openSlot(int mode);
-    void writeSlot(const QByteArray& data);
-    Tester* m_t;
-    using func = void (Tester::*)(Parcel*);
-    std::vector<func> m_f;
-};
+QTime t;
 
 Tester::Tester(QObject* parent)
-    : QObject(parent)
-    , port(new TesterPort(this))
+    : Device(parent) //
 {
-    port->moveToThread(&m_portThread);
-    connect(&m_portThread, &QThread::finished, port, &QObject::deleteLater);
-    m_portThread.start(QThread::InheritPriority);
+    registerCallback<SetSwitch>(&Tester::RxSetSwitch);
+    registerCallback<GetSwitch>(&Tester::RxGetSwitch);
+    registerCallback<SetSwitchResistance>(&Tester::RxSetSwitchResistance);
+    registerCallback<GetSwitchResistance>(&Tester::RxGetSwitchResistance);
+    registerCallback<TestSwitch>(&Tester::RxTestSwitch);
+    registerCallback<SysCmd::Text>(&Tester::RxTestSwitch2);
 }
 
-Tester::~Tester()
-{
-    m_portThread.quit();
-    m_portThread.wait();
+Tester::~Tester() { }
+
+bool Tester::setSwitch(uint8_t test) {
+    if(isConnected()) {
+        emit write(parcel(SetSwitch, test));
+        return m_semaphore.tryAcquire(1, 1000);
+    }
+    return {};
 }
 
-bool Tester::ping(const QString& PortName, int baud, int)
-{
-    QMutexLocker locker(&m_mutex);
-    m_connected = false;
-    do {
-        if (port->isOpen()) {
-            emit close();
-            if (!m_semaphore.tryAcquire(1, 2000))
-                break;
-        }
-
-        if (!PortName.isEmpty())
-            port->setPortName(PortName);
-        port->setBaudRate(baud);
-
-        emit open(QIODevice::ReadWrite);
-        if (!m_semaphore.tryAcquire(1, 1000))
-            break;
-
-        emit write(parcel(PING));
-        if (!m_semaphore.tryAcquire(1, 1000)) {
-            emit close();
-            break;
-        }
-
-        m_connected = true;
-
-    } while (0);
-    if (!m_connected)
-        QMessageBox::critical(nullptr, PortName + " error", port->errorString());
-    return m_connected;
+bool Tester::getSwitch(uint8_t& test) {
+    if(isConnected()) {
+        emit write(parcel(GetSwitch));
+        return m_semaphore.tryAcquire(1, 1000);
+    }
+    return {};
 }
 
-bool Tester::setStage(quint8 stage)
-{
+bool Tester::setSwitchResistance(const K& value) {
+    if(isConnected()) {
+        emit write(parcel(SetSwitchResistance, value));
+        return m_semaphore.tryAcquire(1, 1000);
+    }
+    return {};
+}
+
+bool Tester::getSwitchResistance(K& value) {
+    if(isConnected()) {
+        emit write(parcel(GetSwitchResistance));
+        return m_semaphore.tryAcquire(1, 1000);
+    }
+    return {};
+}
+
+bool Tester::testSwitch() {
     QMutexLocker Locker(&m_mutex);
-    if (isConnected()) {
-        m_result = false;
-        emit write(parcel(SET_STAGE, stage));
-        if (m_semaphore.tryAcquire(1, 1000)) {
-            m_result = true;
+    t.start();
+    if(isConnected()) {
+        adcData.clear();
+        adcData.reserve(1200);
+        m_semaphore.acquire(m_semaphore.available());
+        emit write(parcel(TestSwitch));
+        if(m_semaphore.tryAcquire(1200, 25000)) {
+            std::ranges::sort(adcData, {});
+            int16_t delta{};
+            uint8_t idx{};
+            int32_t average[7]{};
+            uint16_t ctr{};
+
+            for(uint8_t val : adcData) {
+                if(abs(delta - val) > 10) {
+                    delta = val;
+                    average[idx] /= ctr;
+                    ctr = 0;
+                    ++idx;
+                }
+                average[idx] += val;
+                ++ctr;
+            }
+            average[idx] /= ctr;
+
+            K k;
+            idx = 0;
+            for(int32_t val : std::span(average + 1, 6)) {
+                k.data[idx++] = val;
+            }
+            setSwitchResistance(k);
+            getSwitchResistance(k);
+            qDebug() << __FUNCTION__ << t.elapsed();
         }
     }
-    return m_result;
+    return {};
 }
 
-bool Tester::getStage(int& stage)
-{
-    QMutexLocker Locker(&m_mutex);
-    if (isConnected()) {
-        m_result = false;
-        emit write(parcel(GET_STAGE));
-        if (m_semaphore.tryAcquire(1, 1000)) {
-            stage = m_stage;
-            m_result = true;
-        }
-    }
-    return m_result;
-}
-
-void Tester::RxPing(Parcel* data)
-{
-    if (Dbg)
-        qDebug() << "PING"; //<< data.command;
-    Q_UNUSED(data)
-    m_semaphore.release();
-}
-
-void Tester::RxGetStage(Parcel* data)
-{
-    if (Dbg)
-        qDebug() << "GET_STAGE"; //<< data.command;
-    Q_UNUSED(data)
-    m_semaphore.release();
-}
-
-void Tester::RxSetStage(Parcel* data)
-{
-    if (Dbg)
-        qDebug() << "SET_STAGE"; //<< data.command;
-    Q_UNUSED(data)
-    m_semaphore.release();
-}
-
-void Tester::RxReady(Parcel* data)
-{
-    if (Dbg)
-        qDebug() << "READY"; //<< data.command;
-    Q_UNUSED(data)
+void Tester::RxSetSwitch(const QByteArray& data) {
+    qDebug() << __FUNCTION__ << data.toHex().toUpper();
     //m_semaphore.release();
 }
 
-void Tester::RxBufferOverflow(Parcel* data)
-{
-    if (Dbg)
-        qDebug() << "BUFFER_OVERFLOW"; //<< data.command;
-    Q_UNUSED(data)
+void Tester::RxGetSwitch(const QByteArray& data) {
+    qDebug() << __FUNCTION__ << data.toHex().toUpper();
     //m_semaphore.release();
 }
 
-void Tester::RxWrongCommand(Parcel* data)
-{
-    if (Dbg)
-        qDebug() << "WRONG_COMMAND"; //<< data.command;
-    Q_UNUSED(data)
+void Tester::RxSetSwitchResistance(const QByteArray& data) {
+    qDebug() << __FUNCTION__ << data.toHex().toUpper();
     //m_semaphore.release();
 }
 
-void Tester::RxTextualParcel(Parcel* data)
-{
-    if (Dbg)
-        qDebug() << "TEXTUAL_PARCEL"; //<< data.command << data.text();
-    Q_UNUSED(data)
+void Tester::RxGetSwitchResistance(const QByteArray& data) {
+    qDebug() << __FUNCTION__ << data.toHex().toUpper();
     //m_semaphore.release();
 }
 
-void Tester::RxCrcError(Parcel* data)
-{
-    if (Dbg)
-        qDebug() << "CRC_ERROR"; //<< data.command;
-    Q_UNUSED(data)
+void Tester::RxTestSwitch(const QByteArray& data) {
+    const Parcel* p = reinterpret_cast<const Parcel*>(data.data());
+    qDebug() << __FUNCTION__ << *reinterpret_cast<const uint16_t*>(p->data)
+             << static_cast<const int>(p->data[2])
+             << static_cast<const int>(p->data[3])
+             << static_cast<const int>(p->data[4]);
+    adcData.emplace_back(p->data[2]);
     //m_semaphore.release();
 }
 
-void Tester::RxNullFunction(Parcel* data)
-{
-    if (Dbg)
-        qDebug() << "RxNullFunction"; //<< data.command;
-    Q_UNUSED(data)
-    //m_semaphore.release();
+void Tester::RxTestSwitch2(const QByteArray& data) {
+    const Parcel* p = reinterpret_cast<const Parcel*>(data.data());
+    qDebug() << __FUNCTION__
+             << static_cast<const int>(p->data[0])
+             << static_cast<const int>(p->data[1])
+             << static_cast<const int>(p->data[2])
+             << static_cast<const int>(p->data[3])
+             << static_cast<const int>(p->data[4]);
 }
 
-/////////////////////////////////////////
-
-TesterPort::TesterPort(Tester* t)
-    : m_t(t)
-    , m_f(0x100, &Tester::RxNullFunction)
-{
-    m_f[PING] = &Tester::RxPing;
-    m_f[GET_STAGE] = &Tester::RxGetStage;
-    m_f[SET_STAGE] = &Tester::RxSetStage;
-    m_f[READY] = &Tester::RxReady;
-    m_f[BUFFER_OVERFLOW] = &Tester::RxBufferOverflow;
-    m_f[WRONG_COMMAND] = &Tester::RxWrongCommand;
-    m_f[TEXTUAL_PARCEL] = &Tester::RxTextualParcel;
-    m_f[CRC_ERROR] = &Tester::RxCrcError;
-
-    setBaudRate(Baud57600);
-    setDataBits(Data8);
-    setFlowControl(NoFlowControl);
-    setParity(NoParity);
-
-    connect(t, &Tester::open, this, &TesterPort::openSlot);
-    connect(t, &Tester::close, this, &TesterPort::closeSlot);
-    connect(t, &Tester::write, this, &TesterPort::writeSlot);
-    //    //get the virtual table pointer of object obj
-    //    int* vptr = *(int**)amkTester;
-    //    // we shall call the function fn, but first the following assembly code
-    //    //  is required to make obj as 'this' pointer as we shall call
-    //    //  function fn() directly from the virtual table
-    //    //__asm mov ecx, amkTester;
-    //    amkTester;
-    //    //function fn is the first entry of the virtual table, so it's vptr[0]
-    //    ((void (*)(const QByteArray&))vptr[0])(QByteArray("0123456789"));
-
-    //    typedef void (Tester::*func)(const QByteArray&);
-    //    CallBack* ptr = t;
-    //    func* vptr = *(func**)(ptr);
-    //    (t->*vptr[0])(QByteArray("0123456789"));
-    connect(this, &QSerialPort::readyRead, this, &TesterPort::readSlot, Qt::DirectConnection);
-}
-
-void TesterPort::closeSlot()
-{
-    close();
-    m_t->m_semaphore.release();
-}
-
-void TesterPort::openSlot(int mode)
-{
-    if (open(static_cast<OpenMode>(mode)))
-        m_t->m_semaphore.release();
-    else {
-        qDebug() << errorString();
-    }
-}
-
-void TesterPort::writeSlot(const QByteArray& data)
-{
-    qDebug() << write(data) << data.toHex('|').toUpper();
-}
-
-void TesterPort::readSlot()
-{
-    m_data.append(readAll());
-    for (int i = 0; i < m_data.size() - 3; ++i) {
-        Parcel* d = reinterpret_cast<Parcel*>(m_data.data() + i);
-        if (d->start == RX && d->len <= m_data.size()) {
-            counter += d->len;
-            if (checkParcel(m_data.constData() + i))
-                (m_t->*m_f[d->cmd])(d);
-            else
-                (m_t->*m_f[CRC_ERROR])(d);
-
-            m_t->m_semaphore.release();
-            m_data.remove(0, i + d->len);
-            i = 0;
-        }
-    }
-}
+Type Tester::type() const { return Type::AdcSwitch; }
