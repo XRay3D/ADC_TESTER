@@ -79,13 +79,13 @@ void MainWindow::on_pbPing_clicked() {
     getValuesTimer.stop();
     QString str;
     if(!Devices::tester()->ping(ui->cbxPortRelay->currentText()))
-        str.append("PortRelay!\n");
-        if (!Devices::irtAdc()->ping(ui->cbxPortAdc->currentText(), 9600, 1))
-            str.append("PortAdc!\n");
-        if (!Devices::irtI()->ping(ui->cbxPortI->currentText(), 9600, 2))
-            str.append("PortI!\n");
-        if (!Devices::irtU()->ping(ui->cbxPortU->currentText(), 9600, 3))
-            str.append("PortU!\n");
+        str.append("PortRelay!" + Devices::tester()->port()->errorString() + "\n");
+    if(!Devices::irtAdc()->ping(ui->cbxPortAdc->currentText(), 9600, 1))
+        str.append("PortAdc!" + Devices::irtAdc()->port()->errorString() + "\n");
+    if(!Devices::irtI()->ping(ui->cbxPortI->currentText(), 9600, 2))
+        str.append("PortI!" + Devices::irtI()->port()->errorString() + "\n");
+    if(!Devices::irtU()->ping(ui->cbxPortU->currentText(), 9600, 3))
+        str.append("PortU!" + Devices::irtU()->port()->errorString() + "\n");
     if(str.isEmpty()) {
         //        QMessageBox::information(this, "", "Ok");
         getValuesTimer.start(1000);
