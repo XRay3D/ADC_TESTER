@@ -33,16 +33,45 @@ void TesterTh::run() {
 
         QTime time;
         time.start();
-        double avg_ = model->rawAdcData().v2;
-        while(time.elapsed() < (testNum < Test3 ? 6000 : 2000) || (testNum == Test1 && avg_ > threshold)) {
-            msleep(100);
-            Devices::irtAdc()->waitAllReset();
-            emit getValues();
-            qDebug() << "waitAll 1" << Devices::irtAdc()->waitAll(3, 1000);
-            avg_ += model->rawAdcData().v2;
-            avg_ /= 2.0;
-            if(isInterruptionRequested() || !model->rawAdcData().getReady())
-                return;
+        double avg_{};
+        switch(testNum) {
+        case Test1:
+            avg_ = model->rawAdcData().v2;
+            while(time.elapsed() < 6000 || avg_ > threshold * 0.9) {
+                msleep(100);
+                Devices::irtAdc()->waitAllReset();
+                emit getValues();
+                qDebug() << "waitAll 1" << Devices::irtAdc()->waitAll(3, 1000);
+                avg_ += model->rawAdcData().v2;
+                avg_ /= 2.0;
+                if(isInterruptionRequested() || !model->rawAdcData().getReady())
+                    return;
+            }
+            break;
+        case Test2:
+            avg_ = model->rawAdcData().v3;
+            while(time.elapsed() < 6000 || avg_ > threshold * 0.9) {
+                msleep(100);
+                Devices::irtAdc()->waitAllReset();
+                emit getValues();
+                qDebug() << "waitAll 1" << Devices::irtAdc()->waitAll(3, 1000);
+                avg_ += model->rawAdcData().v3;
+                avg_ /= 2.0;
+                if(isInterruptionRequested() || !model->rawAdcData().getReady())
+                    return;
+            }
+            break;
+        default:
+            while(time.elapsed() < 2000) {
+                msleep(100);
+                Devices::irtAdc()->waitAllReset();
+                emit getValues();
+                qDebug() << "waitAll 1" << Devices::irtAdc()->waitAll(3, 1000);
+                avg_ += model->rawAdcData().v2;
+                avg_ /= 2.0;
+                if(isInterruptionRequested() || !model->rawAdcData().getReady())
+                    return;
+            }
         }
 
         adc.reset();
@@ -89,7 +118,7 @@ void TesterTh::test1() {
         m_results[Test1] = false;
     }
     if(abs(adc.uCh2) > threshold) {
-        auto str = ErrorTexts[1][2].arg(abs(adc.uCh2)).arg(2).arg(threshold);
+        auto str = ErrorTexts[1][2].arg(abs(adc.uCh2)).arg(2).arg(threshold * 1.3);
         emit messageR(str);
         m_results[Test1] = false;
     }

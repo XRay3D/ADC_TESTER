@@ -53,8 +53,8 @@ QVariant AdcDataModel::data(const QModelIndex& index, int role) const {
             return (0.1 > abs(m_rawAdcData[index.column()].v1) && abs(m_rawAdcData[index.column()].v1) > threshold) ? QColor{255, 127, 127}
                                                                                                                     : QColor{127, 255, 127};
         case AdcVoltage2:
-            return (0.1 > abs(m_rawAdcData[index.column()].v1) && abs(m_rawAdcData[index.column()].v2) > threshold) ? QColor{255, 127, 127}
-                                                                                                                    : QColor{127, 255, 127};
+            return (0.1 > abs(m_rawAdcData[index.column()].v1) && abs(m_rawAdcData[index.column()].v2) > threshold * 1.3) ? QColor{255, 127, 127}
+                                                                                                                          : QColor{127, 255, 127};
         case AdcVoltage3:
             return (0.1 > abs(m_rawAdcData[index.column()].v3) && abs(m_rawAdcData[index.column()].v3) > threshold) ? QColor{255, 127, 127}
                                                                                                                     : QColor{127, 255, 127};
