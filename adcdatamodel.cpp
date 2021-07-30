@@ -74,7 +74,7 @@ QVariant AdcDataModel::headerData(int section, Qt::Orientation orientation, int 
         "Ток потребления, мА",
     };
     static const QStringList hData{
-        "Значения",
+        "Тек. знач.",
         "1",
         "2",
         "3",

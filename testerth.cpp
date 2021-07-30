@@ -117,7 +117,7 @@ void TesterTh::test1() {
         emit messageR(str);
         m_results[Test1] = false;
     }
-    if(abs(adc.uCh2) > threshold) {
+    if(abs(adc.uCh2) > threshold * 1.3) {
         auto str = ErrorTexts[1][2].arg(abs(adc.uCh2)).arg(2).arg(threshold * 1.3);
         emit messageR(str);
         m_results[Test1] = false;
